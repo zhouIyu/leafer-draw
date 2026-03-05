@@ -1,25 +1,16 @@
-import type { ICommand } from './action.ts'
+import type { ICommand } from './type'
 
 export default class History {
   private undoStack: ICommand[] = []
   private redoStack: ICommand[] = []
   private isExecuting = false
 
-  /**
-   * 添加一个新命令并执行它
-   * @param command
-   */
+
   public addCommand(command: ICommand) {
     this.undoStack.push(command)
-    // 当添加新命令时，清空重做栈
     this.redoStack = []
-    // 注意：命令的执行现在由外部调用者负责
-    // command.execute()
   }
 
-  /**
-   * 撤销上一个命令
-   */
   public undo() {
     if (this.isExecuting) return
     const command = this.undoStack.pop()
@@ -30,9 +21,6 @@ export default class History {
     }
   }
 
-  /**
-   * 重做上一个被撤销的命令
-   */
   public redo() {
     if (this.isExecuting) return
     const command = this.redoStack.pop()

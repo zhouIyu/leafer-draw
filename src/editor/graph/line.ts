@@ -1,4 +1,4 @@
-import { Line, type IPointData, type IUI } from "leafer-ui";
+import { Line, type IPointData, type IUI } from "leafer-editor";
 import GraphBase from "./base";
 
 export default class GraphLine extends GraphBase {

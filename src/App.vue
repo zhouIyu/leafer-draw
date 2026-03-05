@@ -21,7 +21,7 @@ function redo() {
   editor.value?.redo()
 }
 
-function onSelectGraph(name: string) {
+function onSelectGraph(name: string = '') {
   editor.value?.exec(name)
 }
 
@@ -33,7 +33,7 @@ function onClear() {
 <template>
   <div class="leafer-draw">
     <div class="tool-container">
-      <button @click="onSelectGraph('')">选择</button>
+      <button @click="onSelectGraph()">选择</button>
       <button @click="onSelectGraph(GraphTypes.Rect)">矩形</button>
       <button @click="onSelectGraph(GraphTypes.Circle)">圆</button>
       <button @click="onSelectGraph(GraphTypes.Line)">线</button>
@@ -54,7 +54,7 @@ function onClear() {
 }
 .tool-container {
   position: absolute;
-  top: 20px;
+  top: 30px;
   left: 50%;
   transform: translateX(-50%);
   background: #fff;

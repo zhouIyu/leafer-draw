@@ -1,4 +1,4 @@
-import { Ellipse, type IPointData, type IUI } from "leafer-ui";
+import { Ellipse, type IPointData, type IUI } from "leafer-editor";
 import GraphBase from "./base";
 
 

@@ -1,5 +1,5 @@
-import type { App } from "leafer-ui"
-import Editor from '../editor'
+import type { App } from "leafer-editor"
+import type { Editor } from '../type'
 import type GraphBase from "./base"
 import GraphRect from "./rect"
 import GraphCircle from "./circle"

@@ -1,4 +1,4 @@
-import { Rect, type IPointData, type IUI } from "leafer-ui"
+import { Rect, type IPointData, type IUI } from "leafer-editor"
 import GraphBase from "./base"
 
 export default class GraphRect extends GraphBase {
