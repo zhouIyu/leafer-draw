@@ -1,5 +1,5 @@
 import Editor from "./editor"
-
+export { GraphTypes } from "./graph"
 
 export function initEditor(view: HTMLElement): Editor {
   const editor = new Editor({

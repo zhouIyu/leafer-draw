@@ -10,14 +10,15 @@ export default class History {
   constructor(app: App) {
     this.app = app
     this.save()
-    this.addEvent()
+    this.onEvent()
   }
 
-  addEvent() {
+  private onEvent() {
     const { editor, tree } = this.app
-    tree.on([ChildEvent.ADD, ChildEvent.REMOVE], () => {
+    tree.on([ChildEvent.REMOVE], () => {
       this.save()
     })
+    // 监听变换事件
     editor.on([EditorMoveEvent.MOVE, EditorRotateEvent.ROTATE, EditorScaleEvent.SCALE, EditorSkewEvent.SKEW], () => {
       this.isModifying = editor.dragging
     })
@@ -26,6 +27,15 @@ export default class History {
       this.save()
       this.isModifying = false
     })
+  }
+
+  public destroy() {
+    const { editor, tree } = this.app
+    // 监听添加删除事件
+    tree.off([ChildEvent.ADD, ChildEvent.REMOVE])
+    // 监听变换事件
+    editor.off([EditorMoveEvent.MOVE, EditorRotateEvent.ROTATE, EditorScaleEvent.SCALE, EditorSkewEvent.SKEW])
+    editor.off(PointerEvent.UP)
   }
 
   public save() {
