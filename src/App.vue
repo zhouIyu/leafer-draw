@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { initEditor, GraphTypes } from './editor'
-import { onMounted, ref, useTemplateRef, computed } from 'vue'
+import { onMounted, ref, useTemplateRef } from 'vue'
 
 const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
 const editor = ref()
@@ -9,17 +9,8 @@ onMounted(() => {
   editor.value = initEditor(canvas.value!)
 })
 
-// 计算属性：是否可以撤销
-const canUndo = computed(() => editor.value?.canUndo || false)
-
-// 计算属性：是否可以重做
-const canRedo = computed(() => editor.value?.canRedo || false)
-
-// 计算属性：是否有选中元素
-const hasSelection = computed(() => editor.value?.selectedCount > 0)
-
 function deleteSelected() {
-  editor.value?.deleteSelected()
+  editor.value?.remove()
 }
 
 function undo() {
@@ -33,6 +24,10 @@ function redo() {
 function onSelectGraph(name: string) {
   editor.value?.exec(name)
 }
+
+function onClear() {
+  editor.value?.clear()
+}
 </script>
 
 <template>
@@ -42,9 +37,10 @@ function onSelectGraph(name: string) {
       <button @click="onSelectGraph(GraphTypes.Rect)">矩形</button>
       <button @click="onSelectGraph(GraphTypes.Circle)">圆</button>
       <button @click="onSelectGraph(GraphTypes.Line)">线</button>
-      <button @click="deleteSelected" :class="{ selected: hasSelection }">删除选中</button>
-      <button @click="undo" :disabled="!canUndo">撤销</button>
-      <button @click="redo" :disabled="!canRedo">重做</button>
+      <button @click="deleteSelected">删除选中</button>
+      <button @click="onClear">清空画布</button>
+      <button @click="undo">撤销</button>
+      <button @click="redo">重做</button>
     </div>
     <canvas ref="canvas"></canvas>
   </div>

@@ -1,5 +1,6 @@
 import { App, PointerEvent, type IUI, type IPointData } from 'leafer-ui'
 import Editor from '../editor'
+import { AddGraphCommand } from '../action.ts'
 
 export default abstract class GraphBase {
   protected app: App
@@ -46,10 +47,14 @@ export default abstract class GraphBase {
 
   private onUp() {
     if (!this.isDrawing) return
+
+    // 创建命令并添加到历史记录
+    const command = new AddGraphCommand(this.editor, this.graph!)
+    this.editor.addHistory(command)
+
     this.isDrawing = false
     this.graph = null
     this.points = []
-    this.editor.history.save()
   }
 
   protected abstract createGraph(point: IPointData): IUI

@@ -1,96 +1,59 @@
-import { App, type IUIInputData, PointerEvent, ChildEvent } from 'leafer-ui'
-import { EditorMoveEvent, EditorRotateEvent, EditorScaleEvent, EditorSkewEvent } from '@leafer-in/editor'
+import type { ICommand } from './action.ts'
 
 export default class History {
-  private app: App
-  private undoStack: IUIInputData[][] = []
-  private redoStack: IUIInputData[][] = []
-  private isRendering = false
-  private isModifying = false
-  constructor(app: App) {
-    this.app = app
-    this.save()
-    this.onEvent()
-  }
+  private undoStack: ICommand[] = []
+  private redoStack: ICommand[] = []
+  private isExecuting = false
 
-  private onEvent() {
-    const { editor, tree } = this.app
-    tree.on([ChildEvent.REMOVE], () => {
-      this.save()
-    })
-    // 监听变换事件
-    editor.on([EditorMoveEvent.MOVE, EditorRotateEvent.ROTATE, EditorScaleEvent.SCALE, EditorSkewEvent.SKEW], () => {
-      this.isModifying = editor.dragging
-    })
-    editor.on(PointerEvent.UP, () => {
-      if (!this.isModifying) return
-      this.save()
-      this.isModifying = false
-    })
-  }
-
-  public destroy() {
-    const { editor, tree } = this.app
-    // 监听添加删除事件
-    tree.off([ChildEvent.ADD, ChildEvent.REMOVE])
-    // 监听变换事件
-    editor.off([EditorMoveEvent.MOVE, EditorRotateEvent.ROTATE, EditorScaleEvent.SCALE, EditorSkewEvent.SKEW])
-    editor.off(PointerEvent.UP)
-  }
-
-  public save() {
-    if (this.isRendering) return false
-
-    const json = this.app.tree.toJSON()
-    const data = json.children as IUIInputData[]
-    this.undoStack.push(data)
+  /**
+   * 添加一个新命令并执行它
+   * @param command
+   */
+  public addCommand(command: ICommand) {
+    this.undoStack.push(command)
+    // 当添加新命令时，清空重做栈
     this.redoStack = []
+    // 注意：命令的执行现在由外部调用者负责
+    // command.execute()
   }
 
+  /**
+   * 撤销上一个命令
+   */
   public undo() {
-
-    if (this.undoStack.length < 2) return false
-    this.isRendering = true
-
-    const current = this.undoStack.pop()!
-    this.redoStack.push(current)
-
-    const prev = this.undoStack[this.undoStack.length - 1]!
-
-    this.apply(prev)
-
-    this.isRendering = false
-    return true
-  }
-
-  public redo() {
-    if (this.redoStack.length < 1) return false
-    this.isRendering = true
-
-    const next = this.redoStack.pop()!
-    this.undoStack.push(next)
-
-    this.apply(next)
-
-    this.isRendering = false
-    return true
-  }
-
-  private apply(data: IUIInputData[]) {
-    console.log(data)
-    this.app.tree.clear()
-    if (data && Array.isArray(data)) {
-      data.forEach((item) => {
-        this.app.tree.add(item)
-      })
+    if (this.isExecuting) return
+    const command = this.undoStack.pop()
+    if (command) {
+      command.undo()
+      this.redoStack.push(command)
+      this.isExecuting = false
     }
   }
 
+  /**
+   * 重做上一个被撤销的命令
+   */
+  public redo() {
+    if (this.isExecuting) return
+    const command = this.redoStack.pop()
+    if (command) {
+      command.execute()
+      this.undoStack.push(command)
+      this.isExecuting = false
+    }
+  }
+
+  public destroy() {
+    this.undoStack = []
+    this.redoStack = []
+  }
+
   public get canUndo() {
-    return this.undoStack.length > 1
+    return this.undoStack.length > 0
   }
 
   public get canRedo() {
     return this.redoStack.length > 0
   }
 }
+
