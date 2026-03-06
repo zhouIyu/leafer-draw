@@ -37,6 +37,7 @@ function onClear() {
       <button @click="onSelectGraph(GraphTypes.Rect)">矩形</button>
       <button @click="onSelectGraph(GraphTypes.Circle)">圆</button>
       <button @click="onSelectGraph(GraphTypes.Line)">线</button>
+      <button @click="onSelectGraph(GraphTypes.Text)">文本</button>
       <button @click="deleteSelected">删除选中</button>
       <button @click="onClear">清空画布</button>
       <button @click="undo">撤销</button>

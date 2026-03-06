@@ -4,11 +4,13 @@ import type GraphBase from "./base"
 import GraphRect from "./rect"
 import GraphCircle from "./circle"
 import GraphLine from "./line"
+import GraphText from "./text"
 
 export const GraphTypes = {
   Rect: GraphRect.name,
   Circle: GraphCircle.name,
-  Line: GraphLine.name
+  Line: GraphLine.name,
+  Text: GraphText.name
 } as const
 
 export default class Graph {
@@ -26,6 +28,7 @@ export default class Graph {
     this.register(new GraphRect(this.editor))
     this.register(new GraphCircle(this.editor))
     this.register(new GraphLine(this.editor))
+    this.register(new GraphText(this.editor))
   }
 
   register(graph: GraphBase) {
@@ -37,7 +40,7 @@ export default class Graph {
     const graph = this.graphs.get(name)
     const { editor } = this.app
     if (!graph) {
-      this.currentGraph = null
+      this.destroy()
       editor.config.selector = true
       return
     }

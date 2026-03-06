@@ -31,21 +31,21 @@ export default abstract class GraphBase {
   protected onMoveBound = (evt: PointerEvent) => this.onMove(evt)
   protected onUpBound = (_: PointerEvent) => this.onUp()
 
-  private onDown(e: PointerEvent) {
+  protected onDown(e: PointerEvent) {
     this.isDrawing = true
     const startPoint = e.getPagePoint()
     this.points.push(startPoint)
-    this.graph = this.createGraph(startPoint)
+    this.graph = this.create(startPoint)
     this.app.tree.add(this.graph)
   }
 
-  private onMove(e: PointerEvent) {
+  protected onMove(e: PointerEvent) {
     if (!this.isDrawing) return
     const movePoint = e.getPagePoint()
-    this.updateGraph(this.graph!, movePoint)
+    this.update(this.graph!, movePoint)
   }
 
-  private onUp() {
+  protected onUp() {
     if (!this.isDrawing) return
 
     // 创建命令并添加到历史记录
@@ -58,6 +58,6 @@ export default abstract class GraphBase {
     this.points = []
   }
 
-  protected abstract createGraph(point: IPointData): IUI
-  protected abstract updateGraph(item: IUI, endPoint: IPointData): void
+  protected abstract create(point: IPointData): IUI
+  protected abstract update(item: IUI, endPoint: IPointData): void
 }

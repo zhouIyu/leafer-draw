@@ -5,7 +5,7 @@ export default class GraphLine extends GraphBase {
   static name = 'graph_line'
   type = GraphLine.name
 
-  protected createGraph(point: IPointData): IUI {
+  protected create(point: IPointData): IUI {
     return new Line({
       editable: true,
       points: [point],
@@ -16,7 +16,7 @@ export default class GraphLine extends GraphBase {
     })
   }
 
-  protected updateGraph(item: IUI, endPoint: IPointData): void {
+  protected update(item: IUI, endPoint: IPointData): void {
     this.points[1] = endPoint
     const startPoint = this.points[0]
     if (!startPoint) return

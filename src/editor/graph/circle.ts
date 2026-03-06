@@ -7,7 +7,7 @@ export default class GraphCircle extends GraphBase {
 
   type = GraphCircle.name
 
-  protected createGraph(point: IPointData): Ellipse {
+  protected create(point: IPointData): Ellipse {
     return new Ellipse({
       editable: true,
       x: point.x,
@@ -19,7 +19,7 @@ export default class GraphCircle extends GraphBase {
     })
   }
 
-  protected updateGraph(item: IUI, endPoint: IPointData): void {
+  protected update(item: IUI, endPoint: IPointData): void {
     this.points[1] = endPoint
     const startPoint = this.points[0]
     if (!startPoint) return
