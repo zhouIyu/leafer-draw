@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## 项目概述
-这是一个基于 Vue 3 + TypeScript 和 Leafer UI 构建的绘图应用程序。它提供了一个基于画布的绘图编辑器，包含形状工具（矩形、圆形、线条）、选择/变换（移动/缩放/旋转）、删除、清空功能，以及通过基于命令的历史记录实现的撤销/重做功能。
+这是一个基于 Vue 3 + TypeScript 和 Leafer UI 构建的绘图应用程序。它提供了一个基于画布的绘图编辑器，包含形状工具（矩形、圆形、线条、文本）、选择/变换（移动/缩放/旋转）、删除、清空功能，以及通过基于命令的历史记录实现的撤销/重做功能。
 
 ## 构建和开发命令
 
@@ -29,16 +29,24 @@ src/
 ├── editor/                   # 核心编辑器功能
 │   ├── editor.ts             # 主 Editor 类
 │   ├── history.ts           # 撤销/重做历史管理（命令栈）
+│   ├── event.ts              # 事件处理（选择、变换、颜色选择框）
+│   ├── type.ts               # 类型定义
 │   ├── graph/               # 绘图工具
 │   │   ├── base.ts          # 图形抽象基类
 │   │   ├── rect.ts          # 矩形工具
 │   │   ├── circle.ts        # 圆形工具
 │   │   ├── line.ts          # 线条工具
+│   │   ├── text.ts          # 文本工具（支持编辑和颜色选择）
 │   │   └── index.ts         # 图形管理器
-│   ├── action.ts            # 命令实现（添加/更新/删除）
-│   └── index.ts             # 编辑器初始化
-├── main.ts                  # 应用程序入口点
-└── style.scss              # 全局样式
+│   ├── command/             # 命令模式实现
+│   │   ├── addGraph.ts      # 添加图形命令
+│   │   ├── updateGraph.ts   # 更新图形属性命令
+│   │   └── deleteGraph.ts   # 删除图形命令
+│   └── plugin/             # 插件
+│       ├── dotMatrix.ts     # 网格背景插件
+│       ├── ruler.ts         # 标尺插件（暂时禁用，有兼容性问题）
+│       └── snap.ts          # 对齐辅助插件
+└── main.ts                  # 应用程序入口点
 ```
 
 ### 核心组件
@@ -49,12 +57,19 @@ src/
   - `redo()`: 重做最后撤销的操作
   - `exec(name: string)`: 切换当前绘图工具（或选择模式）
 - **History**: 管理撤销/重做的命令栈
-- **Graph**: 绘图工具的抽象基类
-- **GraphRect/GraphCircle/GraphLine**: 具体的绘图工具实现
-- **Commands (action.ts)**:
+- **AddEvent**: 事件处理，包括选择、变换、文本编辑颜色选择框
+- **Graph**: 绘图工具管理器
+- **GraphRect/GraphCircle/GraphLine/GraphText**: 具体的绘图工具实现
+- **Commands**:
   - `AddGraphCommand`: 将创建的形状添加到画布（撤销时移除）
-  - `UpdateAttrsCommand`: 对一个或多个形状应用变换/属性更新（撤销时恢复）
-  - `DeleteGraphsCommand`: 移除选中的形状，撤销时在原始父级/索引位置恢复（也用于清空画布功能）
+  - `UpdateGraphCommand`: 对一个或多个形状应用变换/属性更新（撤销时恢复）
+  - `DeleteGraphsCommand`: 移除选中的形状，撤销时在原始父级/索引位置恢复
+
+## 已知问题
+
+### leafer-x-ruler 插件兼容性问题
+- **问题**: `leafer-x-ruler` v2.0.0 插件存在 bug，重复引入 `leafer-ui/draw`，导致与 `leafer-editor` 冲突，文本编辑功能无法使用
+- **状态**: 暂时禁用，等待插件作者修复
 
 ## 代码风格指南
 
@@ -62,11 +77,11 @@ src/
 - 使用 TypeScript 严格模式，启用 `noUncheckedIndexedAccess: true`
 - Vue 3 Composition API，使用 `<script setup lang="ts">`
 - 从 'vue' 导入 Vue API（如 `ref`、`onMounted`、`useTemplateRef`）
-- 从 'leafer-ui' 和 '@leafer-in/editor' 导入 Leafer UI
+- 从 'leafer-editor' 导入 Leafer UI
 
 ### 导入组织
 1. **内置 Node.js 模块**（如 `path`、`url`）
-2. **第三方库**（如 `vue`、`leafer-ui`）
+2. **第三方库**（如 `vue`、`leafer-editor`）
 3. **本地导入**（使用 `@/*` 别名指向 src/ 目录）
 
 ```typescript
@@ -96,10 +111,9 @@ import { GraphBase } from '@/editor/graph/base'
 #### 抽象基类模式
 ```typescript
 export abstract class GraphBase {
-  protected abstract createGraph(point: IPointData): IUI
-  protected abstract updateGraph(item: IUI, endPoint: IPointData): void
-  
-  // 通用功能
+  protected abstract create(point: IPointData): IUI
+  protected abstract update(item: IUI, endPoint: IPointData): void
+
   init() { /* 事件绑定 */ }
   destroy() { /* 事件解绑 */ }
 }
@@ -115,6 +129,11 @@ export abstract class GraphBase {
 - 添加新命令时清空重做栈
 - 对于变换，在选择/变换开始时捕获 `from`，在指针抬起时提交 `to`
 - 撤销/重做后，通过重新选择目标并调用 `updateEditBox()` 刷新编辑器选择框
+
+#### 颜色选择框模式
+- 监听 `InnerEditorEvent.OPEN` 和 `InnerEditorEvent.CLOSE` 事件
+- 在文本编辑开始时显示颜色选择框，结束时隐藏
+- 使用 `target.worldBoxBounds` 获取目标元素的位置
 
 ### 格式化和样式
 - **缩进**: 2 个空格（由 .editorconfig 强制执行）
@@ -132,10 +151,12 @@ export abstract class GraphBase {
 - Leafer UI 高效处理画布渲染
 - 使用适当的事件绑定/解绑防止内存泄漏
 - 历史管理应针对大型画布状态进行优化
+- 颜色选择框等临时 UI 元素应及时清理
 
 ### 依赖项
 - **核心**: Vue 3、TypeScript、Vite
-- **UI**: Leafer UI、@leafer-in/editor、@leafer-in/viewport
+- **UI**: leafer-editor（包含 @leafer-in/editor 和 @leafer-in/text-editor）
+- **插件**: leafer-x-dot-matrix、leafer-x-easy-snap
 - **工具**: oxlint、oxfmt、eslint 用于代码质量
 - **构建**: vite-plugin-vue-devtools 用于开发
 
@@ -150,4 +171,5 @@ export abstract class GraphBase {
 - 此项目使用 pnpm 作为包管理器
 - Node.js 版本: ^20.19.0 || >=22.12.0
 - Vue DevTools 插件已配置用于开发调试
-- 未找到 Cursor 或 Copilot 规则 - 遵循上述通用指南
+- 文本编辑功能需要 `leafer-editor` 包提供的 TextEditor 支持
+- 避免使用有兼容性问题的第三方插件

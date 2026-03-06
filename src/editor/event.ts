@@ -1,5 +1,4 @@
-import { type ILeafData, type IUI } from 'leafer-editor'
-import { EditorEvent, EditorMoveEvent, EditorScaleEvent, EditorRotateEvent, PointerEvent } from 'leafer-editor'
+import { type ILeafData, type IUI, RenderEvent, EditorEvent, EditorMoveEvent, EditorScaleEvent, EditorRotateEvent, PointerEvent, ResizeEvent, LayoutEvent } from 'leafer-editor'
 import type { Editor } from './type'
 import { UpdateGraphCommand } from './command'
 
@@ -14,7 +13,7 @@ export default class AddEvent {
   }
 
   private initEvent() {
-    const { editor } = this.editor.app
+    const { editor, tree } = this.editor.app
 
     // 监听选择事件，记录初始属性
     editor.on(EditorEvent.SELECT, () => {
@@ -39,6 +38,11 @@ export default class AddEvent {
         this.handleTransformEnd()
         this.isModifying = false
       }
+    })
+
+    // 监听变换事件，更新渲染
+    tree.on([ResizeEvent.RESIZE, LayoutEvent.AFTER], () => {
+      tree.emit(RenderEvent.END, { renderBounds: tree.canvas.bounds })
     })
   }
 
@@ -65,12 +69,14 @@ export default class AddEvent {
   }
 
   destroy() {
-    const { editor } = this.editor.app
+    const { editor, tree } = this.editor.app
     // 清理事件监听器
     editor.off(EditorEvent.SELECT)
     editor.off(EditorMoveEvent.MOVE)
     editor.off(EditorScaleEvent.SCALE)
     editor.off(EditorRotateEvent.ROTATE)
     editor.off(PointerEvent.UP)
+    tree.off(ResizeEvent.RESIZE)
+    tree.off(LayoutEvent.AFTER)
   }
 }
