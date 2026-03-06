@@ -10,7 +10,8 @@ export function initEditor(view: HTMLElement): Editor {
     view,
     editor: {},
     tree: { type: 'design' },
-    fill: '#f3f3f3'
+    zoom: { min: 0.1, max: 20 },
+    fill: '#f3f3f3',
   })
 
   // editor.use(new RulerPlugin())

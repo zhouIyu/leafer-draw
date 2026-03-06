@@ -42,7 +42,7 @@ export default abstract class GraphBase {
   protected onMove(e: PointerEvent) {
     if (!this.isDrawing) return
     const movePoint = e.getPagePoint()
-    this.update(this.graph!, movePoint)
+    this.update(movePoint)
   }
 
   protected onUp() {
@@ -59,5 +59,5 @@ export default abstract class GraphBase {
   }
 
   protected abstract create(point: IPointData): IUI
-  protected abstract update(item: IUI, endPoint: IPointData): void
+  protected abstract update(endPoint: IPointData): void
 }

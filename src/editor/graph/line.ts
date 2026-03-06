@@ -1,11 +1,11 @@
-import { Line, type IPointData, type IUI } from "leafer-editor";
+import { Line, type IPointData } from "leafer-editor";
 import GraphBase from "./base";
 
 export default class GraphLine extends GraphBase {
   static name = 'graph_line'
   type = GraphLine.name
 
-  protected create(point: IPointData): IUI {
+  protected create(point: IPointData): Line {
     return new Line({
       editable: true,
       points: [point],
@@ -16,10 +16,10 @@ export default class GraphLine extends GraphBase {
     })
   }
 
-  protected update(item: IUI, endPoint: IPointData): void {
+  protected update(endPoint: IPointData): void {
     this.points[1] = endPoint
     const startPoint = this.points[0]
     if (!startPoint) return
-    item.set({ points: [startPoint, endPoint] })
+    (this.graph! as Line).set({ points: [startPoint, endPoint] })
   }
 }

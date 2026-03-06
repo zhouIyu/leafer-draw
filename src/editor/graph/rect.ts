@@ -1,11 +1,11 @@
-import { Rect, type IPointData, type IUI } from "leafer-editor"
+import { Rect, type IPointData } from "leafer-editor"
 import GraphBase from "./base"
 
 export default class GraphRect extends GraphBase {
   static name = 'graph_rect'
   type = GraphRect.name
 
-  protected create(point: IPointData): IUI {
+  protected create(point: IPointData): Rect {
     return new Rect({
       editable: true,
       x: point.x,
@@ -17,12 +17,12 @@ export default class GraphRect extends GraphBase {
     })
   }
 
-  protected update(item: IUI, endPoint: IPointData): void {
+  protected update(endPoint: IPointData): void {
     this.points[1] = endPoint
     const startPoint = this.points[0]
     if (!startPoint) return
     const { x, y, width, height } = this.calculateBounds()
-    item.set({ x, y, width, height })
+    this.graph!.set({ x, y, width, height })
   }
 
   private calculateBounds() {

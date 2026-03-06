@@ -1,4 +1,4 @@
-import { Ellipse, type IPointData, type IUI } from "leafer-editor";
+import { Ellipse, type IPointData } from "leafer-editor";
 import GraphBase from "./base";
 
 
@@ -19,12 +19,12 @@ export default class GraphCircle extends GraphBase {
     })
   }
 
-  protected update(item: IUI, endPoint: IPointData): void {
+  protected update(endPoint: IPointData): void {
     this.points[1] = endPoint
     const startPoint = this.points[0]
     if (!startPoint) return
     const { x, y, width, height } = this.calculateBounds()
-    item.set({ x, y, width, height })
+    this.graph!.set({ x, y, width, height })
   }
 
   private calculateBounds() {
