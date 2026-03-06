@@ -13,6 +13,7 @@ export default class GraphRect extends GraphBase {
       width: 0,
       height: 0,
       stroke: '#f00',
+      strokeWidth: 2,
       fill: 'transparent'
     })
   }

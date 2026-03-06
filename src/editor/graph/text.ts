@@ -13,7 +13,7 @@ export default class GraphText extends GraphBase {
       y: point.y,
       text: '双击编辑文本',
       fontSize: 16,
-      fill: '#000',
+      fill: '#f00',
       stroke: 'transparent',
     })
     return text

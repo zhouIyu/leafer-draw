@@ -12,7 +12,7 @@ export default class GraphPen extends GraphBase {
     })
     pen.setStyle({
       stroke: '#32cd79',
-      strokeWidth: 6,
+      strokeWidth: 4,
       strokeCap: 'round',
       strokeJoin: 'round'
     })

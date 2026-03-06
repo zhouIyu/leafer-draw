@@ -4,6 +4,7 @@ import type GraphBase from "./base"
 import GraphRect from "./rect"
 import GraphCircle from "./circle"
 import GraphLine from "./line"
+import GraphArrow from "./arrow"
 import GraphText from "./text"
 import GraphPen from "./pen"
 
@@ -11,6 +12,7 @@ export const GraphTypes = {
   Rect: GraphRect.name,
   Circle: GraphCircle.name,
   Line: GraphLine.name,
+  Arrow: GraphArrow.name,
   Text: GraphText.name,
   Pen: GraphPen.name
 } as const
@@ -30,6 +32,7 @@ export default class Graph {
     this.register(new GraphRect(this.editor))
     this.register(new GraphCircle(this.editor))
     this.register(new GraphLine(this.editor))
+    this.register(new GraphArrow(this.editor))
     this.register(new GraphText(this.editor))
     this.register(new GraphPen(this.editor))
   }

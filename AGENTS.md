@@ -36,9 +36,10 @@ src/
 │   │   ├── rect.ts           # 矩形工具
 │   │   ├── circle.ts         # 圆形工具
 │   │   ├── line.ts           # 线条工具
-│   │   ├── text.ts           # 文本工具（支持编辑和颜色选择）
-│   │   ├── pen.ts            # 自由绘画工具
-│   │   └── index.ts          # 图形管理器
+│   ├── arrow.ts          # 箭头工具
+│   ├── text.ts           # 文本工具（支持编辑和颜色选择）
+│   ├── pen.ts            # 自由绘画工具
+│   └── index.ts          # 图形管理器
 │   ├── command/              # 命令模式实现
 │   │   ├── index.ts          # 命令导出
 │   │   ├── addGraph.ts       # 添加图形命令
@@ -61,7 +62,7 @@ src/
 - **History**: 管理撤销/重做的命令栈
 - **AddEvent**: 事件处理，包括选择、变换、文本编辑颜色选择框
 - **Graph**: 绘图工具管理器
-- **GraphRect/GraphCircle/GraphLine/GraphText/GraphPen**: 具体的绘图工具实现
+- **GraphRect/GraphCircle/GraphLine/GraphArrow/GraphText/GraphPen**: 具体的绘图工具实现
 - **Commands**:
   - `AddGraphCommand`: 将创建的形状添加到画布（撤销时移除）
   - `UpdateGraphCommand`: 对一个或多个形状应用变换/属性更新（撤销时恢复）
