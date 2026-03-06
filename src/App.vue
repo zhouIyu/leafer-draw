@@ -35,12 +35,12 @@ function onClear() {
     <div class="tool-container">
       <button @click="onSelectGraph()">选择</button>
       <button @click="onSelectGraph(GraphTypes.Rect)">矩形</button>
-      <button @click="onSelectGraph(GraphTypes.Circle)">圆</button>
-      <button @click="onSelectGraph(GraphTypes.Line)">线</button>
+      <button @click="onSelectGraph(GraphTypes.Circle)">椭圆</button>
+      <button @click="onSelectGraph(GraphTypes.Line)">直线</button>
       <button @click="onSelectGraph(GraphTypes.Text)">文本</button>
-      <button @click="onSelectGraph(GraphTypes.Pen)">自由绘画</button>
-      <button @click="deleteSelected">删除选中</button>
-      <button @click="onClear">清空画布</button>
+      <button @click="onSelectGraph(GraphTypes.Pen)">画笔</button>
+      <button @click="deleteSelected">删除</button>
+      <button @click="onClear">清空</button>
       <button @click="undo">撤销</button>
       <button @click="redo">重做</button>
     </div>

@@ -9,6 +9,7 @@ export default abstract class GraphBase {
   protected graph: IUI | null = null
   protected points: IPointData[] = []
   abstract type: string
+  protected isUpSelect = true
 
   constructor(editor: Editor) {
     this.editor = editor
@@ -51,8 +52,11 @@ export default abstract class GraphBase {
     // 创建命令并添加到历史记录
     const command = new AddGraphCommand(this.editor, this.graph!)
     this.editor.addHistory(command)
-    this.editor.exec()
-    this.editor.app.editor.select(this.graph!)
+    if (this.isUpSelect) {
+      this.editor.exec()
+      this.editor.app.editor.select(this.graph!)
+    }
+
     this.isDrawing = false
     this.graph = null
     this.points = []

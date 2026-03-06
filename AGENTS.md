@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## 项目概述
-这是一个基于 Vue 3 + TypeScript 和 Leafer UI 构建的绘图应用程序。它提供了一个基于画布的绘图编辑器，包含形状工具（矩形、圆形、线条、文本）、选择/变换（移动/缩放/旋转）、删除、清空功能，以及通过基于命令的历史记录实现的撤销/重做功能。
+这是一个基于 Vue 3 + TypeScript 和 Leafer UI 构建的绘图应用程序。它提供了一个基于画布的绘图编辑器，包含形状工具（矩形、圆形、线条、文本、自由绘画）、选择/变换（移动/缩放/旋转）、删除、清空功能，以及通过基于命令的历史记录实现的撤销/重做功能。
 
 ## 构建和开发命令
 
@@ -28,24 +28,26 @@ src/
 ├── App.vue                    # 主应用组件
 ├── editor/                   # 核心编辑器功能
 │   ├── editor.ts             # 主 Editor 类
-│   ├── history.ts           # 撤销/重做历史管理（命令栈）
+│   ├── history.ts            # 撤销/重做历史管理（命令栈）
 │   ├── event.ts              # 事件处理（选择、变换、颜色选择框）
-│   ├── type.ts               # 类型定义
-│   ├── graph/               # 绘图工具
-│   │   ├── base.ts          # 图形抽象基类
-│   │   ├── rect.ts          # 矩形工具
-│   │   ├── circle.ts        # 圆形工具
-│   │   ├── line.ts          # 线条工具
-│   │   ├── text.ts          # 文本工具（支持编辑和颜色选择）
-│   │   └── index.ts         # 图形管理器
-│   ├── command/             # 命令模式实现
-│   │   ├── addGraph.ts      # 添加图形命令
-│   │   ├── updateGraph.ts   # 更新图形属性命令
-│   │   └── deleteGraph.ts   # 删除图形命令
-│   └── plugin/             # 插件
-│       ├── dotMatrix.ts     # 网格背景插件
-│       ├── ruler.ts         # 标尺插件（暂时禁用，有兼容性问题）
-│       └── snap.ts          # 对齐辅助插件
+│   ├── type.ts               # 类型定义（ICommand、IPlugin）
+│   ├── graph/                # 绘图工具
+│   │   ├── base.ts           # 图形抽象基类
+│   │   ├── rect.ts           # 矩形工具
+│   │   ├── circle.ts         # 圆形工具
+│   │   ├── line.ts           # 线条工具
+│   │   ├── text.ts           # 文本工具（支持编辑和颜色选择）
+│   │   ├── pen.ts            # 自由绘画工具
+│   │   └── index.ts          # 图形管理器
+│   ├── command/              # 命令模式实现
+│   │   ├── index.ts          # 命令导出
+│   │   ├── addGraph.ts       # 添加图形命令
+│   │   ├── updateGraph.ts    # 更新图形属性命令
+│   │   └── deleteGraph.ts    # 删除图形命令
+│   └── plugin/                # 插件
+│       ├── dotMatrix.ts      # 网格背景插件
+│       ├── ruler.ts          # 标尺插件（暂时禁用）
+│       └── snap.ts           # 对齐辅助插件
 └── main.ts                  # 应用程序入口点
 ```
 
@@ -59,17 +61,52 @@ src/
 - **History**: 管理撤销/重做的命令栈
 - **AddEvent**: 事件处理，包括选择、变换、文本编辑颜色选择框
 - **Graph**: 绘图工具管理器
-- **GraphRect/GraphCircle/GraphLine/GraphText**: 具体的绘图工具实现
+- **GraphRect/GraphCircle/GraphLine/GraphText/GraphPen**: 具体的绘图工具实现
 - **Commands**:
   - `AddGraphCommand`: 将创建的形状添加到画布（撤销时移除）
   - `UpdateGraphCommand`: 对一个或多个形状应用变换/属性更新（撤销时恢复）
   - `DeleteGraphsCommand`: 移除选中的形状，撤销时在原始父级/索引位置恢复
+- **Plugins**:
+  - `DotMatrix`: 网格背景
+  - `SnapPlugin`: 对齐辅助
+  - `RulerPlugin`: 标尺（暂时禁用）
+
+### 类型定义 (type.ts)
+```typescript
+interface ICommand {
+  execute(): void
+  undo(): void
+}
+
+interface IPlugin {
+  init(app: App): void
+  enable(enabled: boolean): void
+  destroy(): void
+}
+```
 
 ## 已知问题
 
 ### leafer-x-ruler 插件兼容性问题
 - **问题**: `leafer-x-ruler` v2.0.0 插件存在 bug，重复引入 `leafer-ui/draw`，导致与 `leafer-editor` 冲突，文本编辑功能无法使用
 - **状态**: 暂时禁用，等待插件作者修复
+
+## 编辑器配置
+
+### 缩放限制
+- 在 `src/editor/index.ts` 中配置
+- 默认最小缩放: 0.1 (10%)
+- 默认最大缩放: 5 (500%)
+
+### 初始化配置 (index.ts)
+```typescript
+const editor = new Editor({
+  view,
+  editor: { zoom: { min: 0.1, max: 5 } },
+  tree: { type: 'design' },
+  fill: '#f3f3f3'
+})
+```
 
 ## 代码风格指南
 
@@ -135,6 +172,12 @@ export abstract class GraphBase {
 - 在文本编辑开始时显示颜色选择框，结束时隐藏
 - 使用 `target.worldBoxBounds` 获取目标元素的位置
 
+#### 自由绘画工具模式
+- 继承 `GraphBase`，重写 `onDown`、`onMove`、`onUp` 事件处理方法
+- 使用 `Pen` 元素绘制自由曲线
+- 通过 `pen.lineTo(x, y)` 方法添加点
+- 可配置线条样式（颜色、粗细、端点样式）
+
 ### 格式化和样式
 - **缩进**: 2 个空格（由 .editorconfig 强制执行）
 - **引号**: 字符串使用单引号
@@ -156,7 +199,7 @@ export abstract class GraphBase {
 ### 依赖项
 - **核心**: Vue 3、TypeScript、Vite
 - **UI**: leafer-editor（包含 @leafer-in/editor 和 @leafer-in/text-editor）
-- **插件**: leafer-x-dot-matrix、leafer-x-easy-snap
+- **插件**: leafer-x-dot-matrix、leafer-x-easy-snap（leafer-x-ruler 暂时禁用）
 - **工具**: oxlint、oxfmt、eslint 用于代码质量
 - **构建**: vite-plugin-vue-devtools 用于开发
 

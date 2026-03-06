@@ -33,11 +33,8 @@ export default class GraphText extends GraphBase {
   }
 
   protected onDown = (e: PointerEvent) => {
-    const startPoint = e.getPagePoint()
-    this.points.push(startPoint)
-    this.graph = this.create(startPoint)
-    this.app.tree.add(this.graph)
-    this.app.editor.select(this.graph)
+    super.onDown(e)
+    this.app.editor.select(this.graph!)
 
     const command = new AddGraphCommand(this.editor, this.graph!)
     this.editor.addHistory(command)
