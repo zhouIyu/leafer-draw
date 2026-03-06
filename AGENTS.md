@@ -29,23 +29,26 @@ src/
 ├── editor/                   # 核心编辑器功能
 │   ├── editor.ts             # 主 Editor 类
 │   ├── history.ts            # 撤销/重做历史管理（命令栈）
-│   ├── event.ts              # 事件处理（选择、变换、颜色选择框）
+│   ├── event.ts              # 事件处理（选择、变换、文本编辑等）
 │   ├── type.ts               # 类型定义（ICommand、IPlugin）
 │   ├── graph/                # 绘图工具
 │   │   ├── base.ts           # 图形抽象基类
 │   │   ├── rect.ts           # 矩形工具
 │   │   ├── circle.ts         # 圆形工具
 │   │   ├── line.ts           # 线条工具
-│   ├── arrow.ts          # 箭头工具
-│   ├── text.ts           # 文本工具（支持编辑和颜色选择）
-│   ├── pen.ts            # 自由绘画工具
-│   └── index.ts          # 图形管理器
+│   │   ├── arrow.ts          # 箭头工具
+│   │   ├── text.ts           # 文本工具（支持编辑）
+│   │   ├── pen.ts            # 自由绘画工具
+│   │   └── index.ts          # 图形管理器
 │   ├── command/              # 命令模式实现
 │   │   ├── index.ts          # 命令导出
 │   │   ├── addGraph.ts       # 添加图形命令
 │   │   ├── updateGraph.ts    # 更新图形属性命令
 │   │   └── deleteGraph.ts    # 删除图形命令
-│   └── plugin/                # 插件
+│   ├── recorder/             # 变更记录器（抽象出可撤销的状态变更）
+│   │   ├── transformRecorder.ts  # 几何变换记录器（移动/缩放/旋转）
+│   │   └── textChangeRecorder.ts # 文本内容变更记录器
+│   └── plugin/               # 插件
 │       ├── dotMatrix.ts      # 网格背景插件
 │       ├── ruler.ts          # 标尺插件（暂时禁用）
 │       └── snap.ts           # 对齐辅助插件
@@ -59,13 +62,16 @@ src/
   - `undo()`: 撤销最后一个操作
   - `redo()`: 重做最后撤销的操作
   - `exec(name: string)`: 切换当前绘图工具（或选择模式）
-- **History**: 管理撤销/重做的命令栈
-- **AddEvent**: 事件处理，包括选择、变换、文本编辑颜色选择框
+- **History**: 管理撤销/重做的命令栈，带执行期锁（防止在 undo/redo 回放时再次写入历史）
+- **AddEvent**: 事件接线层，负责把 Leafer Editor 的事件（选择、变换、内部文本编辑生命周期等）转发给对应的 recorder
 - **Graph**: 绘图工具管理器
 - **GraphRect/GraphCircle/GraphLine/GraphArrow/GraphText/GraphPen**: 具体的绘图工具实现
+- **Recorder**:
+  - `TransformRecorder`: 监听选择与变换事件，采样 from/to 几何属性并生成 `UpdateGraphCommand`
+  - `TextChangeRecorder`: 监听内部文本编辑打开/关闭事件，记录文本内容变更并生成 `UpdateGraphCommand`
 - **Commands**:
   - `AddGraphCommand`: 将创建的形状添加到画布（撤销时移除）
-  - `UpdateGraphCommand`: 对一个或多个形状应用变换/属性更新（撤销时恢复）
+  - `UpdateGraphCommand`: 对一个或多个形状应用变换/属性更新（包括几何与文本等可更新属性，撤销时恢复）
   - `DeleteGraphsCommand`: 移除选中的形状，撤销时在原始父级/索引位置恢复
 - **Plugins**:
   - `DotMatrix`: 网格背景
@@ -165,7 +171,9 @@ export abstract class GraphBase {
 #### 历史模式
 - 使用命令对象（`execute()` / `undo()`）推入 `History`
 - 添加新命令时清空重做栈
-- 对于变换，在选择/变换开始时捕获 `from`，在指针抬起时提交 `to`
+- `History` 在 `undo()/redo()` 执行期间会开启执行期锁，防止命令回放过程再次写入历史
+- 对于几何变换，通过 `TransformRecorder` 在选择/变换开始时捕获 `from`，在指针抬起时提交 `to`
+- 对于文本内容，通过 `TextChangeRecorder` 在内部文本编辑打开时捕获原始内容，关闭前比较差异并按需入栈
 - 撤销/重做后，通过重新选择目标并调用 `updateEditBox()` 刷新编辑器选择框
 
 #### 颜色选择框模式

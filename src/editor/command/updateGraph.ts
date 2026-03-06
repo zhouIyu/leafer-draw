@@ -1,17 +1,19 @@
 import type { ILeafData, IUI } from "leafer-editor"
 import type { Editor, ICommand } from "../type"
 
+type UpdatableLeafData = ILeafData & { text?: string }
+
 export default class UpdateGraphCommand implements ICommand {
   private editor: Editor
   private graphs: IUI[]
-  private fromAttrsList: Partial<ILeafData>[]
-  private toAttrsList: Partial<ILeafData>[]
+  private fromAttrsList: Partial<UpdatableLeafData>[]
+  private toAttrsList: Partial<UpdatableLeafData>[]
 
   constructor(
     editor: Editor,
     graphs: IUI[],
-    fromAttrsList: Partial<ILeafData>[],
-    toAttrsList: Partial<ILeafData>[]
+    fromAttrsList: Partial<UpdatableLeafData>[],
+    toAttrsList: Partial<UpdatableLeafData>[]
   ) {
     this.editor = editor
     this.graphs = graphs
