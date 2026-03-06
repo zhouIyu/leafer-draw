@@ -1,10 +1,10 @@
-import { Text, type IPointData, PointerEvent } from "leafer-editor"
+import { Text, type IPointData } from "leafer-editor"
 import GraphBase from "./base"
-import { AddGraphCommand } from "../command"
 
 export default class GraphText extends GraphBase {
   static name = 'graph_text'
   type = GraphText.name
+  protected mode = 'oneClick' as const
 
   protected create(point: IPointData): Text {
     const text = new Text({
@@ -22,22 +22,5 @@ export default class GraphText extends GraphBase {
   protected update(_endPoint: IPointData): void {
     // 文本不需要实时更新，只需要在创建时设置初始位置
     // 文本内容编辑通过双击事件处理
-  }
-
-  init() {
-    this.app.on(PointerEvent.DOWN, this.onDown)
-  }
-
-  destroy(): void {
-    this.app.off(PointerEvent.DOWN, this.onDown)
-  }
-
-  protected onDown = (e: PointerEvent) => {
-    super.onDown(e)
-    this.app.editor.select(this.graph!)
-
-    const command = new AddGraphCommand(this.editor, this.graph!)
-    this.editor.addHistory(command)
-    this.editor.exec()
   }
 }

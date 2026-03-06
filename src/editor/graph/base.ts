@@ -2,14 +2,16 @@ import type { Editor } from '../type'
 import { AddGraphCommand } from '../command'
 import { type IUI, type IPointData, App, PointerEvent } from 'leafer-editor'
 
+export type ToolMode = 'drag' | 'oneClick' | 'freeDraw'
+
 export default abstract class GraphBase {
   protected app: App
   protected editor: Editor
   protected isDrawing = false
   protected graph: IUI | null = null
   protected points: IPointData[] = []
+  protected mode: ToolMode = 'drag'
   abstract type: string
-  protected isUpSelect = true
 
   constructor(editor: Editor) {
     this.editor = editor
@@ -33,11 +35,17 @@ export default abstract class GraphBase {
   protected onUpBound = (_: PointerEvent) => this.onUp()
 
   protected onDown(e: PointerEvent) {
-    this.isDrawing = true
     const startPoint = e.getPagePoint()
     this.points.push(startPoint)
     this.graph = this.create(startPoint)
     this.app.tree.add(this.graph)
+
+    if (this.mode === 'oneClick') {
+      this.finalizeCreation()
+      return
+    }
+
+    this.isDrawing = true
   }
 
   protected onMove(e: PointerEvent) {
@@ -48,13 +56,19 @@ export default abstract class GraphBase {
 
   protected onUp() {
     if (!this.isDrawing) return
+    this.finalizeCreation()
+  }
 
-    // 创建命令并添加到历史记录
-    const command = new AddGraphCommand(this.editor, this.graph!)
+  protected finalizeCreation() {
+    const graph = this.graph
+    if (!graph) return
+
+    const command = new AddGraphCommand(this.editor, graph)
     this.editor.addHistory(command)
-    if (this.isUpSelect) {
+
+    if (this.mode !== 'freeDraw') {
       this.editor.exec()
-      this.editor.app.editor.select(this.graph!)
+      this.editor.app.editor.select(graph)
     }
 
     this.isDrawing = false

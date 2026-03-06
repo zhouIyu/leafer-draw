@@ -31,6 +31,7 @@ export default class Editor {
 
   addHistory(command: ICommand) {
     if (!command) return
+    if (this.history.executing) return
     this.history.addCommand(command)
   }
 

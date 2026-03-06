@@ -14,9 +14,13 @@ export default class History {
   public undo() {
     if (this.isExecuting) return
     const command = this.undoStack.pop()
-    if (command) {
+    if (!command) return
+
+    this.isExecuting = true
+    try {
       command.undo()
       this.redoStack.push(command)
+    } finally {
       this.isExecuting = false
     }
   }
@@ -24,9 +28,13 @@ export default class History {
   public redo() {
     if (this.isExecuting) return
     const command = this.redoStack.pop()
-    if (command) {
+    if (!command) return
+
+    this.isExecuting = true
+    try {
       command.execute()
       this.undoStack.push(command)
+    } finally {
       this.isExecuting = false
     }
   }
@@ -42,6 +50,10 @@ export default class History {
 
   public get canRedo() {
     return this.redoStack.length > 0
+  }
+
+  public get executing() {
+    return this.isExecuting
   }
 }
 

@@ -4,7 +4,7 @@ import GraphBase from "./base"
 export default class GraphPen extends GraphBase {
   static name = 'graph_pen'
   type = GraphPen.name
-  isUpSelect = false
+  protected mode = 'freeDraw' as const
 
   protected create(point: IPointData): Pen {
     const pen = new Pen({
