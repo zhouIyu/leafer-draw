@@ -31,13 +31,16 @@ watch(
 
 onBeforeUnmount(() => offSelection?.())
 
-const primary = computed(() => selected.value[0] as GraphLike | undefined)
-
 const fill = ref('')
 const stroke = ref('')
+const fillPicker = ref('#ffffff')
+const strokePicker = ref('#ff0000')
 const strokeWidth = ref<number | null>(null)
+const dashed = ref(false)
+const cornerRadius = ref<number | null>(null)
 const text = ref('')
 const fontSize = ref<number | null>(null)
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/
 
 function isPlainString(value: unknown): value is string {
   return typeof value === 'string'
@@ -86,15 +89,45 @@ function commonText(items: GraphLike[]) {
   return first
 }
 
+function toColorInputValue(value: string, fallback: string) {
+  if (HEX_COLOR_RE.test(value)) return value
+  return fallback
+}
+
 function allSupportText(items: GraphLike[]) {
   if (items.length === 0) return false
   return items.every((item) => 'text' in item)
 }
 
+function filterByAttr(items: GraphLike[], key: string) {
+  return items.filter((item) => key in item)
+}
+
+function commonDashed(items: GraphLike[]) {
+  if (items.length === 0) return false
+  const firstItem = items[0]
+  if (!firstItem) return false
+  const first = firstItem['dashPattern']
+  if (!Array.isArray(first)) return false
+
+  const firstSignature = first.join(',')
+  for (const item of items) {
+    const dashPattern = item['dashPattern']
+    if (!Array.isArray(dashPattern)) return false
+    if (dashPattern.join(',') !== firstSignature) return false
+  }
+
+  return first.length > 0
+}
+
 function syncFormFromSelection(items: GraphLike[]) {
   fill.value = commonString(items, 'fill')
   stroke.value = commonString(items, 'stroke')
+  fillPicker.value = toColorInputValue(fill.value, fillPicker.value)
+  strokePicker.value = toColorInputValue(stroke.value, strokePicker.value)
   strokeWidth.value = commonNumber(items, 'strokeWidth')
+  dashed.value = commonDashed(filterByAttr(items, 'dashPattern'))
+  cornerRadius.value = commonNumber(filterByAttr(items, 'cornerRadius'), 'cornerRadius')
 
   if (allSupportText(items)) {
     text.value = commonText(items)
@@ -111,37 +144,8 @@ function commitAttrs(attrs: Partial<UpdatableLeafData>) {
   editor.updateAttrs(attrs)
 }
 
-const geometry = computed(() => {
-  const item = primary.value
-  if (!item) return null
-  const x = item['x']
-  const y = item['y']
-  const width = item['width']
-  const height = item['height']
-  const rotation = item['rotation']
-  return {
-    x: isFiniteNumber(x) ? x : null,
-    y: isFiniteNumber(y) ? y : null,
-    width: isFiniteNumber(width) ? width : null,
-    height: isFiniteNumber(height) ? height : null,
-    rotation: isFiniteNumber(rotation) ? rotation : null,
-  }
-})
-
-const multiSizes = computed(() => {
-  if (selected.value.length <= 1) return []
-  return selected.value.map((item, index) => {
-    const width = item['width']
-    const height = item['height']
-    return {
-      key: (item['id'] ?? item['name'] ?? item['tag'] ?? index) as string | number,
-      index,
-      width: isFiniteNumber(width) ? width : null,
-      height: isFiniteNumber(height) ? height : null,
-    }
-  })
-})
-
+const showDashPattern = computed(() => selected.value.some((item) => 'dashPattern' in item))
+const showCornerRadius = computed(() => selected.value.some((item) => 'cornerRadius' in item))
 const showTextSection = computed(() => allSupportText(selected.value))
 </script>
 
@@ -159,45 +163,6 @@ const showTextSection = computed(() => allSupportText(selected.value))
 
     <div v-else class="panel-body">
       <section class="section">
-        <div class="section-title">几何（只读）</div>
-        <div v-if="selected.length === 1" class="grid">
-          <div class="row">
-            <div class="label">X</div>
-            <div class="value">{{ geometry?.x ?? '—' }}</div>
-          </div>
-          <div class="row">
-            <div class="label">Y</div>
-            <div class="value">{{ geometry?.y ?? '—' }}</div>
-          </div>
-          <div class="row">
-            <div class="label">W</div>
-            <div class="value">{{ geometry?.width ?? '—' }}</div>
-          </div>
-          <div class="row">
-            <div class="label">H</div>
-            <div class="value">{{ geometry?.height ?? '—' }}</div>
-          </div>
-          <div class="row">
-            <div class="label">R</div>
-            <div class="value">{{ geometry?.rotation ?? '—' }}</div>
-          </div>
-        </div>
-
-        <div v-else class="sizes">
-          <div class="sizes-head">
-            <div class="sizes-col">#</div>
-            <div class="sizes-col">W</div>
-            <div class="sizes-col">H</div>
-          </div>
-          <div v-for="row in multiSizes" :key="row.key" class="sizes-row">
-            <div class="sizes-col">{{ row.index + 1 }}</div>
-            <div class="sizes-col">{{ row.width ?? '—' }}</div>
-            <div class="sizes-col">{{ row.height ?? '—' }}</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section">
         <div class="section-title">样式</div>
 
         <div class="field">
@@ -206,10 +171,11 @@ const showTextSection = computed(() => allSupportText(selected.value))
             <input
               class="color"
               type="color"
-              v-model="fill"
+              :value="fillPicker"
               @change="
                 (e) => {
-                  fill = (e.target as HTMLInputElement).value
+                  fillPicker = (e.target as HTMLInputElement).value
+                  fill = fillPicker
                   commitAttrs({ fill })
                 }
               "
@@ -218,6 +184,7 @@ const showTextSection = computed(() => allSupportText(selected.value))
               class="input"
               type="text"
               v-model="fill"
+              disabled
               placeholder="例如：#ff0000 / transparent"
               @change="commitAttrs({ fill })"
             />
@@ -227,11 +194,23 @@ const showTextSection = computed(() => allSupportText(selected.value))
         <div class="field">
           <label class="field-label">描边 Stroke</label>
           <div class="field-control">
-            <input class="color" type="color" v-model="stroke" @change="commitAttrs({ stroke })" />
+            <input
+              class="color"
+              type="color"
+              :value="strokePicker"
+              @change="
+                (e) => {
+                  strokePicker = (e.target as HTMLInputElement).value
+                  stroke = strokePicker
+                  commitAttrs({ stroke })
+                }
+              "
+            />
             <input
               class="input"
               type="text"
               v-model="stroke"
+              disabled
               placeholder="例如：#00aaff / transparent"
               @change="commitAttrs({ stroke })"
             />
@@ -252,6 +231,45 @@ const showTextSection = computed(() => allSupportText(selected.value))
                   const n = Number((e.target as HTMLInputElement).value)
                   strokeWidth = Number.isFinite(n) ? n : null
                   if (strokeWidth !== null) commitAttrs({ strokeWidth })
+                }
+              "
+            />
+          </div>
+        </div>
+
+        <div v-if="showDashPattern" class="field">
+          <label class="field-label">虚线 Dashed</label>
+          <div class="field-control">
+            <label class="checkbox">
+              <input
+                type="checkbox"
+                v-model="dashed"
+                @change="
+                  (e) => {
+                    dashed = (e.target as HTMLInputElement).checked
+                    commitAttrs({ dashPattern: dashed ? [8, 4] : [] })
+                  }
+                "
+              />
+              <span>启用虚线</span>
+            </label>
+          </div>
+        </div>
+
+        <div v-if="showCornerRadius" class="field">
+          <label class="field-label">圆角 CornerRadius</label>
+          <div class="field-control">
+            <input
+              class="input"
+              type="number"
+              min="0"
+              step="1"
+              v-model="cornerRadius"
+              @change="
+                (e) => {
+                  const n = Number((e.target as HTMLInputElement).value)
+                  cornerRadius = Number.isFinite(n) && n >= 0 ? n : null
+                  if (cornerRadius !== null) commitAttrs({ cornerRadius })
                 }
               "
             />
@@ -426,6 +444,14 @@ const showTextSection = computed(() => allSupportText(selected.value))
   display: flex;
   gap: 10px;
   align-items: center;
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.78);
 }
 
 .color {

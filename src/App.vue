@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { initEditor, GraphTypes } from './editor'
-import { onMounted, ref, useTemplateRef } from 'vue'
+import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 
 const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
@@ -29,6 +29,71 @@ function onSelectGraph(name: string = '') {
 function onClear() {
   editor.value?.clear()
 }
+
+function isTypingTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false
+  if (target.isContentEditable) return true
+  const tag = target.tagName
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+}
+
+function handleKeydown(e: KeyboardEvent) {
+  if (!editor.value) return
+  if (isTypingTarget(e.target)) return
+
+  const key = e.key.toLowerCase()
+  const withCommand = e.metaKey || e.ctrlKey
+
+  if (withCommand && key === 'z') {
+    e.preventDefault()
+    if (e.shiftKey) {
+      redo()
+    } else {
+      undo()
+    }
+    return
+  }
+
+  if (withCommand && key === 'y') {
+    e.preventDefault()
+    redo()
+    return
+  }
+
+  if (key === 'delete' || key === 'backspace') {
+    e.preventDefault()
+    deleteSelected()
+    return
+  }
+
+  if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
+
+  if (key === 'v' || key === 'escape') {
+    onSelectGraph()
+    return
+  }
+
+  const toolMap: Record<string, string> = {
+    r: GraphTypes.Rect,
+    o: GraphTypes.Circle,
+    l: GraphTypes.Line,
+    a: GraphTypes.Arrow,
+    t: GraphTypes.Text,
+    p: GraphTypes.Pen,
+  }
+
+  const tool = toolMap[key]
+  if (!tool) return
+  onSelectGraph(tool)
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <template>

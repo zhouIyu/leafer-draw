@@ -14,6 +14,8 @@ const DEFAULT_GRAPH_ATTRS: GraphAttrs = {
   strokeWidth: 2,
   fill: 'transparent',
   fontSize: 14,
+  dashPattern: [],
+  cornerRadius: 0,
 }
 
 export const GraphTypes = {
@@ -75,6 +77,19 @@ export default class Graph {
     }
     if (typeof attrs.fontSize === 'number' && Number.isFinite(attrs.fontSize)) {
       next.fontSize = attrs.fontSize
+    }
+    if (
+      Array.isArray(attrs.dashPattern) &&
+      attrs.dashPattern.every(item => Number.isFinite(item) && item >= 0)
+    ) {
+      next.dashPattern = attrs.dashPattern
+    }
+    if (
+      typeof attrs.cornerRadius === 'number' &&
+      Number.isFinite(attrs.cornerRadius) &&
+      attrs.cornerRadius >= 0
+    ) {
+      next.cornerRadius = attrs.cornerRadius
     }
     if (Object.keys(next).length === 0) return
 

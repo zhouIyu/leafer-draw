@@ -15,7 +15,10 @@ export interface IPlugin {
 }
 
 export type UpdatableLeafData = IUIInputData & { text?: string }
-export type GraphAttrs = Pick<UpdatableLeafData, 'stroke' | 'strokeWidth' | 'fill' | 'fontSize'>
+export type GraphAttrs = Pick<
+  UpdatableLeafData,
+  'stroke' | 'strokeWidth' | 'fill' | 'fontSize' | 'dashPattern' | 'cornerRadius'
+>
 export type GraphLike = IUIInputData & {
   set: (attrs: Partial<UpdatableLeafData>) => void
 }
