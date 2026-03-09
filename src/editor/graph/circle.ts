@@ -14,9 +14,7 @@ export default class GraphCircle extends GraphBase {
       y: point.y,
       width: 0,
       height: 0,
-      stroke: '#f00',
-      strokeWidth: 2,
-      fill: 'transparent'
+      ...this.attrs,
     })
   }
 

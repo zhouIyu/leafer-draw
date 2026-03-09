@@ -1,10 +1,10 @@
 import { type IAppConfig, App } from 'leafer-editor'
 import History from './history'
 import Graph from './graph'
-import { DeleteGraphsCommand } from './command'
+import { DeleteGraphsCommand, UpdateGraphCommand } from './command'
 import AddEvent from './event'
 
-import type { ICommand, IPlugin } from './type'
+import type { ICommand, IPlugin, GraphLike, UpdatableLeafData } from './type'
 
 export default class Editor {
   app: App
@@ -12,6 +12,7 @@ export default class Editor {
   graph: Graph
   plugins: IPlugin[] = []
   private event: AddEvent
+  private selectionListeners = new Set<(items: unknown[]) => void>()
 
   constructor(config: IAppConfig) {
     const app = new App({
@@ -69,10 +70,35 @@ export default class Editor {
     this.graph.exec(name)
   }
 
+  update(items: GraphLike[], fromAttrsList: Partial<UpdatableLeafData>[], toAttrsList: Partial<UpdatableLeafData>[]) {
+    const command = new UpdateGraphCommand(this, items, fromAttrsList, toAttrsList)
+    command.execute()
+    this.addHistory(command)
+  }
+
+  getSelected() {
+    const { editor } = this.app
+    return Array.from(new Set(editor.list))
+  }
+
+  onSelectionChange(listener: (items: unknown[]) => void) {
+    this.selectionListeners.add(listener)
+    listener(this.getSelected())
+    return () => {
+      this.selectionListeners.delete(listener)
+    }
+  }
+
+  notifySelectionChange() {
+    const items = this.getSelected()
+    for (const listener of this.selectionListeners) listener(items)
+  }
+
   destroy() {
     this.history.destroy()
     this.graph.destroy()
     this.plugins.forEach(plugin => plugin.destroy())
     this.event.destroy()
+    this.selectionListeners.clear()
   }
 }

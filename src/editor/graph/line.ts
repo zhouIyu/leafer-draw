@@ -11,9 +11,7 @@ export default class GraphLine extends GraphBase {
       points: [point],
       width: 0,
       height: 0,
-      stroke: '#f00',
-      strokeWidth: 2,
-      fill: 'transparent'
+      ...this.attrs,
     })
   }
 

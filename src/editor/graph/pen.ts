@@ -11,8 +11,7 @@ export default class GraphPen extends GraphBase {
       editable: true,
     })
     pen.setStyle({
-      stroke: '#32cd79',
-      strokeWidth: 4,
+      ...this.attrs,
       strokeCap: 'round',
       strokeJoin: 'round'
     })

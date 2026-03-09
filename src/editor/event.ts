@@ -37,7 +37,10 @@ export default class AddEvent {
     tree.on(LayoutEvent.AFTER, this.onTreeLayout)
   }
 
-  private onSelect = () => this.transformRecorder.onSelect()
+  private onSelect = () => {
+    this.transformRecorder.onSelect()
+    this.editor.notifySelectionChange()
+  }
 
   private onModify = () => this.transformRecorder.onTransformChange()
 

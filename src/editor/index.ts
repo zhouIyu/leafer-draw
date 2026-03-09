@@ -20,3 +20,5 @@ export function initEditor(view: HTMLElement): Editor {
 
   return editor
 }
+
+export * from './type'

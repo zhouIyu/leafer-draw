@@ -12,9 +12,7 @@ export default class GraphArrow extends GraphBase {
       width: 0,
       height: 0,
       endArrow: 'arrow',
-      stroke: '#f00',
-      strokeWidth: 2,
-      fill: 'transparent'
+      ...this.attrs,
     })
   }
 

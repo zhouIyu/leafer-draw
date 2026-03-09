@@ -1,17 +1,17 @@
-import type { ILeafData, IUI } from "leafer-editor"
-import type { Editor, ICommand } from "../type"
+import type { IUI } from "leafer-editor"
+import type { Editor, ICommand, GraphLike, UpdatableLeafData } from "../type"
 
-type UpdatableLeafData = ILeafData & { text?: string }
+
 
 export default class UpdateGraphCommand implements ICommand {
   private editor: Editor
-  private graphs: IUI[]
+  private graphs: GraphLike[]
   private fromAttrsList: Partial<UpdatableLeafData>[]
   private toAttrsList: Partial<UpdatableLeafData>[]
 
   constructor(
     editor: Editor,
-    graphs: IUI[],
+    graphs: GraphLike[],
     fromAttrsList: Partial<UpdatableLeafData>[],
     toAttrsList: Partial<UpdatableLeafData>[]
   ) {
@@ -45,7 +45,7 @@ export default class UpdateGraphCommand implements ICommand {
 
   private updateSelection() {
     const { editor } = this.editor.app
-    editor.select(this.graphs)
+    editor.select(this.graphs as unknown as IUI[])
     editor.updateEditBox()
   }
 }

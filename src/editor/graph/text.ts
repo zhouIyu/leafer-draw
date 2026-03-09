@@ -12,9 +12,9 @@ export default class GraphText extends GraphBase {
       x: point.x,
       y: point.y,
       text: '双击编辑文本',
-      fontSize: 16,
-      fill: '#f00',
+      ...this.attrs,
       stroke: 'transparent',
+      fill: this.attrs.stroke as string,
     })
     return text
   }

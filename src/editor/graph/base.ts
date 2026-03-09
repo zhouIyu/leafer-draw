@@ -12,6 +12,12 @@ export default abstract class GraphBase {
   protected points: IPointData[] = []
   protected mode: ToolMode = 'drag'
   abstract type: string
+  protected attrs: Record<string, unknown> = {
+    stroke: '#ff0000',
+    strokeWidth: 2,
+    fill: 'transparent',
+    fontSize: 14,
+  }
 
   constructor(editor: Editor) {
     this.editor = editor
