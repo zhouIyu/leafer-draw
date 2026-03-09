@@ -1,12 +1,20 @@
-import type { App } from "leafer-editor"
+import type { App } from 'leafer-editor'
 import type { Editor } from '../type'
-import type GraphBase from "./base"
-import GraphRect from "./rect"
-import GraphCircle from "./circle"
-import GraphLine from "./line"
-import GraphArrow from "./arrow"
-import GraphText from "./text"
-import GraphPen from "./pen"
+import type { UpdatableLeafData, GraphAttrs } from '../type'
+import type GraphBase from './base'
+import GraphRect from './rect'
+import GraphCircle from './circle'
+import GraphLine from './line'
+import GraphArrow from './arrow'
+import GraphText from './text'
+import GraphPen from './pen'
+
+const DEFAULT_GRAPH_ATTRS: GraphAttrs = {
+  stroke: '#ff0000',
+  strokeWidth: 2,
+  fill: 'transparent',
+  fontSize: 14,
+}
 
 export const GraphTypes = {
   Rect: GraphRect.name,
@@ -22,6 +30,7 @@ export default class Graph {
   protected editor: Editor
   protected graphs: Map<string, GraphBase> = new Map()
   protected currentGraph: GraphBase | null = null
+  protected defaultAttrs: GraphAttrs = DEFAULT_GRAPH_ATTRS
   constructor(editor: Editor) {
     this.editor = editor
     this.app = editor.app
@@ -54,6 +63,26 @@ export default class Graph {
     this.currentGraph = graph
     editor.config.selector = false
     graph.init()
+    graph.setAttrs(this.defaultAttrs)
+  }
+
+  setAttrs(attrs: Partial<UpdatableLeafData>) {
+    const next: Partial<GraphAttrs> = {}
+    if (typeof attrs.stroke === 'string') next.stroke = attrs.stroke
+    if (typeof attrs.fill === 'string') next.fill = attrs.fill
+    if (typeof attrs.strokeWidth === 'number' && Number.isFinite(attrs.strokeWidth)) {
+      next.strokeWidth = attrs.strokeWidth
+    }
+    if (typeof attrs.fontSize === 'number' && Number.isFinite(attrs.fontSize)) {
+      next.fontSize = attrs.fontSize
+    }
+    if (Object.keys(next).length === 0) return
+
+    this.defaultAttrs = {
+      ...this.defaultAttrs,
+      ...next,
+    }
+    this.currentGraph?.setAttrs(next)
   }
 
   destroy() {

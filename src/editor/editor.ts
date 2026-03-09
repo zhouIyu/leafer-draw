@@ -12,7 +12,7 @@ export default class Editor {
   graph: Graph
   plugins: IPlugin[] = []
   private event: AddEvent
-  private selectionListeners = new Set<(items: unknown[]) => void>()
+  private selectionListeners = new Set<(items: GraphLike[]) => void>()
 
   constructor(config: IAppConfig) {
     const app = new App({
@@ -51,8 +51,7 @@ export default class Editor {
 
     const uniqueItems = Array.from(new Set(selectedItems))
     const command = new DeleteGraphsCommand(this, uniqueItems)
-    command.execute()
-    this.addHistory(command)
+    this.execCommand(command)
   }
 
   clear() {
@@ -62,18 +61,25 @@ export default class Editor {
 
     const uniqueItems = Array.from(new Set(items))
     const command = new DeleteGraphsCommand(this, uniqueItems)
-    command.execute()
-    this.addHistory(command)
+    this.execCommand(command)
   }
 
   exec(name: string = '') {
     this.graph.exec(name)
   }
 
-  update(items: GraphLike[], fromAttrsList: Partial<UpdatableLeafData>[], toAttrsList: Partial<UpdatableLeafData>[]) {
-    const command = new UpdateGraphCommand(this, items, fromAttrsList, toAttrsList)
+  private execCommand(command: ICommand) {
+    if (!command) return
+    if (this.history.executing) return
     command.execute()
     this.addHistory(command)
+  }
+
+  updateAttrs(attrs: Partial<UpdatableLeafData>) {
+    this.graph.setAttrs(attrs)
+    const command = UpdateGraphCommand.buildUpdateCommand(this, this.getSelectedGraphLike(), attrs)
+    if (!command) return
+    this.execCommand(command)
   }
 
   getSelected() {
@@ -81,17 +87,27 @@ export default class Editor {
     return Array.from(new Set(editor.list))
   }
 
-  onSelectionChange(listener: (items: unknown[]) => void) {
+  onSelectionChange(listener: (items: GraphLike[]) => void) {
     this.selectionListeners.add(listener)
-    listener(this.getSelected())
+    listener(this.getSelectedGraphLike())
     return () => {
       this.selectionListeners.delete(listener)
     }
   }
 
   notifySelectionChange() {
-    const items = this.getSelected()
+    const items = this.getSelectedGraphLike()
     for (const listener of this.selectionListeners) listener(items)
+  }
+
+  private getSelectedGraphLike() {
+    return this.getSelected().filter(this.isGraphLike)
+  }
+
+  private isGraphLike(item: unknown): item is GraphLike {
+    if (!item || typeof item !== 'object') return false
+    const record = item as Record<string, unknown>
+    return typeof record['set'] === 'function'
   }
 
   destroy() {

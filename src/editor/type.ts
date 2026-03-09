@@ -1,5 +1,5 @@
-import type { App, IUIInputData } from "leafer-editor"
-import Editor from "./editor"
+import type { App, IUIInputData } from 'leafer-editor'
+import Editor from './editor'
 
 export type { Editor }
 
@@ -15,6 +15,7 @@ export interface IPlugin {
 }
 
 export type UpdatableLeafData = IUIInputData & { text?: string }
+export type GraphAttrs = Pick<UpdatableLeafData, 'stroke' | 'strokeWidth' | 'fill' | 'fontSize'>
 export type GraphLike = IUIInputData & {
   set: (attrs: Partial<UpdatableLeafData>) => void
 }

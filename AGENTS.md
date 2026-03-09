@@ -26,11 +26,13 @@
 ```
 src/
 ├── App.vue                    # 主应用组件
+├── components/               # Vue 组件
+│   └── PropertiesPanel.vue   # 属性面板（支持多选、样式编辑、文本编辑）
 ├── editor/                   # 核心编辑器功能
 │   ├── editor.ts             # 主 Editor 类
 │   ├── history.ts            # 撤销/重做历史管理（命令栈）
 │   ├── event.ts              # 事件处理（选择、变换、文本编辑等）
-│   ├── type.ts               # 类型定义（ICommand、IPlugin）
+│   ├── type.ts               # 类型定义（ICommand、IPlugin、GraphLike、UpdatableLeafData）
 │   ├── graph/                # 绘图工具
 │   │   ├── base.ts           # 图形抽象基类
 │   │   ├── rect.ts           # 矩形工具

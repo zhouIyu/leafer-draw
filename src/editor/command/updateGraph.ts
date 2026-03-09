@@ -48,4 +48,28 @@ export default class UpdateGraphCommand implements ICommand {
     editor.select(this.graphs as unknown as IUI[])
     editor.updateEditBox()
   }
+
+  static buildUpdateCommand(editor: Editor, items: GraphLike[], attrs: Partial<UpdatableLeafData>) {
+    if (items.length === 0) return null
+
+    const keys = Object.keys(attrs) as (keyof UpdatableLeafData)[]
+    if (keys.length === 0) return null
+
+    const applicable = items.filter((item) => keys.every((key) => key in item))
+    if (applicable.length === 0) return null
+
+    const attrsRecord = attrs as Record<string, unknown>
+    const hasChanged = applicable.some((item) =>
+      keys.some((key) => item[key as string] !== attrsRecord[key as string])
+    )
+    if (!hasChanged) return null
+
+    const fromAttrsList = applicable.map((item) => {
+      const from: Record<string, unknown> = {}
+      for (const key of keys) from[key as string] = item[key as string]
+      return from as Partial<UpdatableLeafData>
+    })
+    const toAttrsList = applicable.map(() => ({ ...attrs }))
+    return new UpdateGraphCommand(editor, applicable, fromAttrsList, toAttrsList)
+  }
 }

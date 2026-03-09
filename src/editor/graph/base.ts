@@ -1,6 +1,7 @@
 import type { Editor } from '../type'
 import { AddGraphCommand } from '../command'
 import { type IUI, type IPointData, App, PointerEvent } from 'leafer-editor'
+import type { GraphAttrs } from '../type'
 
 export type ToolMode = 'drag' | 'oneClick' | 'freeDraw'
 
@@ -12,12 +13,7 @@ export default abstract class GraphBase {
   protected points: IPointData[] = []
   protected mode: ToolMode = 'drag'
   abstract type: string
-  protected attrs: Record<string, unknown> = {
-    stroke: '#ff0000',
-    strokeWidth: 2,
-    fill: 'transparent',
-    fontSize: 14,
-  }
+  protected attrs: GraphAttrs = {}
 
   constructor(editor: Editor) {
     this.editor = editor
@@ -80,6 +76,13 @@ export default abstract class GraphBase {
     this.isDrawing = false
     this.graph = null
     this.points = []
+  }
+
+  setAttrs(attrs: Partial<GraphAttrs>) {
+    this.attrs = {
+      ...this.attrs,
+      ...attrs,
+    }
   }
 
   protected abstract create(point: IPointData): IUI

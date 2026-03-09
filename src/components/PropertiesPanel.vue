@@ -10,17 +10,6 @@ const props = defineProps<{
 const selected = ref<GraphLike[]>([])
 let offSelection: undefined | (() => void)
 
-function isGraphLike(item: unknown): item is GraphLike {
-  if (!item || typeof item !== 'object') return false
-  const record = item as Record<string, unknown>
-  return typeof record['set'] === 'function'
-}
-
-function normalizeSelection(items: unknown[]) {
-  // Vue 侧不信任外部来源的结构，先过滤成“可写”的图形集合，避免面板误操作。
-  return items.filter(isGraphLike)
-}
-
 watch(
   () => props.editor,
   (editor) => {
@@ -33,9 +22,8 @@ watch(
     }
 
     offSelection = editor.onSelectionChange((items) => {
-      const graphs = normalizeSelection(items)
-      selected.value = graphs
-      syncFormFromSelection(graphs)
+      selected.value = items
+      syncFormFromSelection(items)
     })
   },
   { immediate: true },
@@ -120,31 +108,7 @@ function syncFormFromSelection(items: GraphLike[]) {
 function commitAttrs(attrs: Partial<UpdatableLeafData>) {
   const editor = props.editor
   if (!editor) return
-
-  const items = selected.value
-  if (items.length === 0) return
-
-  // 面板里的任何写操作都统一走 UpdateGraphCommand：
-  // - 计算 from/to 快照，确保可 undo/redo
-  // - 只对“真的有变化”的情况入历史，避免产生空命令污染栈
-  const keys = Object.keys(attrs) as (keyof UpdatableLeafData)[]
-  if (keys.length === 0) return
-
-  const applicable = items.filter((item) => keys.every((key) => key in item))
-  if (applicable.length === 0) return
-
-  const attrsRecord = attrs as Record<string, unknown>
-  const hasChanged = applicable.some((item) => keys.some((key) => item[key as string] !== attrsRecord[key as string]))
-  if (!hasChanged) return
-
-  const fromAttrsList = applicable.map((item) => {
-    const from: Record<string, unknown> = {}
-    for (const key of keys) from[key as string] = item[key as string]
-    return from as Partial<UpdatableLeafData>
-  })
-
-  const toAttrsList = applicable.map(() => ({ ...attrs }))
-  editor.update(applicable, fromAttrsList, toAttrsList)
+  editor.updateAttrs(attrs)
 }
 
 const geometry = computed(() => {
