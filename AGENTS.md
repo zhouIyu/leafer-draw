@@ -45,11 +45,11 @@ src/
 ├── components/
 │   └── PropertiesPanel.vue
 ├── editor/
-│   ├── index.ts
-│   ├── editor.ts
-│   ├── history.ts
-│   ├── event.ts
-│   ├── type.ts
+│   ├── index.ts                 # 唯一导出入口
+│   ├── editor.ts                # 主协调器
+│   ├── history.ts               # 命令栈管理
+│   ├── event.ts                 # 事件总线 + 事件处理
+│   ├── type.ts                  # 类型定义
 │   ├── graph/
 │   │   ├── base.ts
 │   │   ├── rect.ts
@@ -68,10 +68,12 @@ src/
 │   │   ├── transformRecorder.ts
 │   │   ├── textChangeRecorder.ts
 │   │   └── index.ts
-│   └── plugin/
-│       ├── dotMatrix.ts
-│       ├── snap.ts
-│       └── ruler.ts
+│   ├── plugin/
+│   │   ├── dotMatrix.ts
+│   │   ├── snap.ts
+│   │   └── ruler.ts
+│   └── utils/
+│       └── selection.ts
 └── main.ts
 ```
 
@@ -106,7 +108,18 @@ src/
 - `freeDraw`：连续采样（画笔）
 
 ### 5.4 Event + Recorder（`src/editor/event.ts`, `src/editor/recorder/*`）
-`AddEvent` 负责把 Leafer 事件转成可撤销记录：
+事件系统分为两层：
+
+**mitt 事件总线**（`src/editor/event.ts`）：
+- 使用 `mitt` 库实现轻量级发布/订阅
+- 导出 `emitter` 实例和 `Events` 常量对象
+- 事件列表：
+  - `SELECTION_CHANGE`：选择变更时触发，payload 为选中元素数组
+  - `HISTORY_CHANGE`：历史栈变更时触发，payload 包含 `canUndo/canRedo` 状态
+- UI 层通过订阅事件实现按钮状态同步
+
+**AddEvent 类**（`src/editor/event.ts`）：
+- 负责把 Leafer 事件转成可撤销记录
 - `TransformRecorder`：记录几何变换 from/to，提交 `UpdateGraphCommand`
 - `TextChangeRecorder`：在内部文本编辑 `BEFORE_OPEN/CLOSE` 之间记录文本变化
 
@@ -114,6 +127,17 @@ src/
 - `AddGraphCommand`：创建图形后入栈，撤销时移除
 - `UpdateGraphCommand`：批量属性更新，可撤销恢复
 - `DeleteGraphsCommand`：删除时记录 parent/index，撤销按原位置恢复
+
+### 5.6 统一导出入口（`src/editor/index.ts`）
+`index.ts` 是 editor 模块的唯一导出入口，统一暴露：
+- `initEditor(view)`：编辑器初始化函数
+- `Editor`：主编辑器类（类型）
+- `GraphTypes`：图形工具类型
+- `emitter`：mitt 事件总线实例
+- `Events`：事件名称常量对象
+- 所有类型定义（`type.ts`）
+
+UI 层应从 `@/editor` 导入所需内容，避免直接引用内部模块。
 
 ---
 
@@ -211,6 +235,12 @@ const editor = new Editor({
 2. 在 `src/editor/index.ts` 中 `editor.use()`
 3. 验证不会破坏文本编辑与历史系统
 
+### 10.4 使用事件总线同步 UI 状态
+1. 从 `@/editor` 导入 `emitter` 和 `Events`
+2. 订阅事件：`emitter.on(Events.SELECTION_CHANGE, (items) => { ... })`
+3. 在组件卸载时取消订阅：`emitter.off(Events.SELECTION_CHANGE, handler)`
+4. 常用场景：工具栏按钮状态、属性面板显示、撤销/重做按钮启用状态
+
 ---
 
 ## 11. 测试与质量
@@ -228,6 +258,7 @@ const editor = new Editor({
 ### 12.1 关键依赖
 - 核心：`vue`、`typescript`、`vite`
 - 绘图：`leafer-editor`
+- 事件总线：`mitt`
 - 插件：`leafer-x-dot-matrix`、`leafer-x-easy-snap`
 - 质量工具：`oxlint`、`oxfmt`、`eslint`
 
