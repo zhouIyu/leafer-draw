@@ -20,6 +20,7 @@ export default class GraphPen extends GraphBase {
   }
 
   protected update(endPoint: IPointData): void {
-    (this.graph! as Pen).lineTo(endPoint.x, endPoint.y)
+    if (!this.graph) return
+    (this.graph as Pen).lineTo(endPoint.x, endPoint.y)
   }
 }

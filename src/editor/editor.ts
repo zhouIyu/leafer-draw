@@ -1,10 +1,12 @@
-import { type IAppConfig, App } from 'leafer-editor'
+import { type IAppConfig, App, type IUI } from 'leafer-editor'
 import History from './history'
 import Graph from './graph'
-import { DeleteGraphsCommand, UpdateGraphCommand } from './command'
+import { AddGraphCommand, DeleteGraphsCommand, UpdateGraphCommand } from './command'
 import AddEvent from './event'
+import { getSelected, getSelectedGraphLike } from './utils/selection'
+import { emitter, Events } from './event'
 
-import type { ICommand, IPlugin, GraphLike, UpdatableLeafData } from './type'
+import type { ICommand, IPlugin, UpdatableLeafData } from './type'
 
 export default class Editor {
   app: App
@@ -12,7 +14,7 @@ export default class Editor {
   graph: Graph
   plugins: IPlugin[] = []
   private event: AddEvent
-  private selectionListeners = new Set<(items: GraphLike[]) => void>()
+  private clipboard: IUI[] = []
 
   constructor(config: IAppConfig) {
     const app = new App({
@@ -34,24 +36,48 @@ export default class Editor {
     if (!command) return
     if (this.history.executing) return
     this.history.addCommand(command)
+    this.emitHistoryChange()
   }
 
   undo() {
     this.history.undo()
+    this.emitHistoryChange()
   }
 
   redo() {
     this.history.redo()
+    this.emitHistoryChange()
+  }
+
+  get canUndo() {
+    return this.history.canUndo
+  }
+
+  get canRedo() {
+    return this.history.canRedo
+  }
+
+  get hasClipboard() {
+    return this.clipboard.length > 0
+  }
+
+  selectAll() {
+    const { tree, editor } = this.app
+    if (!tree || !editor) return
+    const items = tree.children
+    if (items.length === 0) return
+    const allItems = Array.from(items)
+    editor.select(allItems)
+    this.emitSelectionChange()
   }
 
   remove() {
-    const { editor } = this.app
-    const selectedItems = editor.list
+    const selectedItems = getSelected(this)
     if (selectedItems.length === 0) return
 
-    const uniqueItems = Array.from(new Set(selectedItems))
-    const command = new DeleteGraphsCommand(this, uniqueItems)
+    const command = new DeleteGraphsCommand(this, selectedItems)
     this.execCommand(command)
+    this.emitSelectionChange()
   }
 
   clear() {
@@ -62,6 +88,40 @@ export default class Editor {
     const uniqueItems = Array.from(new Set(items))
     const command = new DeleteGraphsCommand(this, uniqueItems)
     this.execCommand(command)
+    this.emitSelectionChange()
+  }
+
+  copy() {
+    const selectedItems = getSelected(this)
+    if (selectedItems.length === 0) return
+    this.clipboard = selectedItems.map(item => item.clone())
+  }
+
+  paste() {
+    if (this.clipboard.length === 0) return
+    const { tree } = this.app
+    if (!tree) return
+
+    const offset = 20
+    const newItems: IUI[] = []
+    for (const item of this.clipboard) {
+      const cloned = item.clone()
+      if (cloned) {
+        cloned.set({
+          x: (cloned.x || 0) + offset,
+          y: (cloned.y || 0) + offset,
+        })
+        tree.add(cloned)
+        newItems.push(cloned)
+      }
+    }
+
+    if (newItems.length > 0) {
+      const command = new AddGraphCommand(this, newItems)
+      this.execCommand(command)
+      this.app.editor.select(newItems)
+      this.emitSelectionChange()
+    }
   }
 
   exec(name: string = '') {
@@ -77,37 +137,21 @@ export default class Editor {
 
   updateAttrs(attrs: Partial<UpdatableLeafData>) {
     this.graph.setAttrs(attrs)
-    const command = UpdateGraphCommand.buildUpdateCommand(this, this.getSelectedGraphLike(), attrs)
+    const command = UpdateGraphCommand.buildUpdateCommand(this, getSelectedGraphLike(this), attrs)
     if (!command) return
     this.execCommand(command)
   }
 
-  getSelected() {
-    const { editor } = this.app
-    return Array.from(new Set(editor.list))
+  emitSelectionChange() {
+    const items = getSelectedGraphLike(this)
+    emitter.emit(Events.SELECTION_CHANGE, items)
   }
 
-  onSelectionChange(listener: (items: GraphLike[]) => void) {
-    this.selectionListeners.add(listener)
-    listener(this.getSelectedGraphLike())
-    return () => {
-      this.selectionListeners.delete(listener)
-    }
-  }
-
-  notifySelectionChange() {
-    const items = this.getSelectedGraphLike()
-    for (const listener of this.selectionListeners) listener(items)
-  }
-
-  private getSelectedGraphLike() {
-    return this.getSelected().filter(this.isGraphLike)
-  }
-
-  private isGraphLike(item: unknown): item is GraphLike {
-    if (!item || typeof item !== 'object') return false
-    const record = item as Record<string, unknown>
-    return typeof record['set'] === 'function'
+  private emitHistoryChange() {
+    emitter.emit(Events.HISTORY_CHANGE, {
+      canUndo: this.canUndo,
+      canRedo: this.canRedo,
+    })
   }
 
   destroy() {
@@ -115,6 +159,5 @@ export default class Editor {
     this.graph.destroy()
     this.plugins.forEach(plugin => plugin.destroy())
     this.event.destroy()
-    this.selectionListeners.clear()
   }
 }

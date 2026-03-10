@@ -35,6 +35,9 @@ importers:
       leafer-x-ruler:
         specifier: ^2.0.0
         version: 2.0.0(@leafer-in/interface@2.0.2(@leafer-ui/interface@2.0.2)(@leafer/interface@2.0.2))(@leafer-in/resize@2.0.2(@leafer-in/interface@2.0.2(@leafer-ui/interface@2.0.2)(@leafer/interface@2.0.2))(@leafer-ui/draw@2.0.2)(@leafer-ui/interface@2.0.2))(@leafer-ui/draw@2.0.2)
+      mitt:
+        specifier: ^3.0.1
+        version: 3.0.1
       sass-embedded:
         specifier: ^1.97.3
         version: 1.97.3
@@ -1745,6 +1748,9 @@ packages:
   minimatch@10.2.4:
     resolution: {integrity: sha512-oRjTw/97aTBN0RHbYCdtF1MQfvusSIBQM0IZEgzl6426+8jSC0nF1a/GmnVLpfB9yyr6g6FTqWqiZVbxrtaCIg==}
     engines: {node: 18 || 20 || >=22}
+
+  mitt@3.0.1:
+    resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
 
   mrmime@2.0.1:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
@@ -4048,6 +4054,8 @@ snapshots:
   minimatch@10.2.4:
     dependencies:
       brace-expansion: 5.0.4
+
+  mitt@3.0.1: {}
 
   mrmime@2.0.1: {}
 

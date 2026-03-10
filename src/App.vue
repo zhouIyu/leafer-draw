@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { initEditor, GraphTypes } from './editor'
-import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
+import { emitter, Events } from './editor'
+import type { GraphLike } from './editor'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 
 const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
@@ -10,8 +12,47 @@ onMounted(() => {
   editor.value = initEditor(canvas.value!)
 })
 
+const canUndo = ref(false)
+const canRedo = ref(false)
+const selectionCount = ref(0)
+const hasSelection = computed(() => selectionCount.value > 0)
+const hasClipboard = computed(() => editor.value?.hasClipboard ?? false)
+
+function handleSelectionChange(items: unknown[]) {
+  selectionCount.value = (items as GraphLike[]).length
+}
+
+function handleHistoryChange(payload: unknown) {
+  const { canUndo: u, canRedo: r } = payload as { canUndo: boolean; canRedo: boolean }
+  canUndo.value = u
+  canRedo.value = r
+}
+
+onMounted(() => {
+  emitter.on(Events.SELECTION_CHANGE, handleSelectionChange)
+  emitter.on(Events.HISTORY_CHANGE, handleHistoryChange)
+})
+
+onBeforeUnmount(() => {
+  emitter.off(Events.SELECTION_CHANGE, handleSelectionChange)
+  emitter.off(Events.HISTORY_CHANGE, handleHistoryChange)
+  window.removeEventListener('keydown', handleKeydown)
+})
+
+function selectAll() {
+  editor.value?.selectAll()
+}
+
 function deleteSelected() {
   editor.value?.remove()
+}
+
+function copy() {
+  editor.value?.copy()
+}
+
+function paste() {
+  editor.value?.paste()
 }
 
 function undo() {
@@ -60,6 +101,24 @@ function handleKeydown(e: KeyboardEvent) {
     return
   }
 
+  if (withCommand && key === 'c') {
+    e.preventDefault()
+    copy()
+    return
+  }
+
+  if (withCommand && key === 'v') {
+    e.preventDefault()
+    paste()
+    return
+  }
+
+  if (withCommand && key === 'a') {
+    e.preventDefault()
+    selectAll()
+    return
+  }
+
   if (key === 'delete' || key === 'backspace') {
     e.preventDefault()
     deleteSelected()
@@ -68,7 +127,7 @@ function handleKeydown(e: KeyboardEvent) {
 
   if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
 
-  if (key === 'v' || key === 'escape') {
+  if (key === 'escape') {
     onSelectGraph()
     return
   }
@@ -107,10 +166,13 @@ onBeforeUnmount(() => {
         <button @click="onSelectGraph(GraphTypes.Arrow)">箭头</button>
         <button @click="onSelectGraph(GraphTypes.Text)">文本</button>
         <button @click="onSelectGraph(GraphTypes.Pen)">画笔</button>
-        <button @click="deleteSelected">删除</button>
+        <button @click="deleteSelected" :disabled="!hasSelection">删除</button>
         <button @click="onClear">清空</button>
-        <button @click="undo">撤销</button>
-        <button @click="redo">重做</button>
+        <button @click="copy" :disabled="!hasSelection">复制</button>
+        <button @click="paste" :disabled="!hasClipboard">粘贴</button>
+        <button @click="selectAll" :disabled="!hasSelection">全选</button>
+        <button @click="undo" :disabled="!canUndo">撤销</button>
+        <button @click="redo" :disabled="!canRedo">重做</button>
       </div>
       <canvas ref="canvas"></canvas>
     </div>

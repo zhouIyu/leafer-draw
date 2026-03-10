@@ -3,18 +3,26 @@ import type { ICommand, Editor } from "../type"
 
 export default class AddGraphCommand implements ICommand {
   private editor: Editor
-  private graph: IUI
+  private graphs: IUI[]
 
-  constructor(editor: Editor, graphInstance: IUI) {
+  constructor(editor: Editor, graphInstances: IUI | IUI[]) {
     this.editor = editor
-    this.graph = graphInstance
+    this.graphs = Array.isArray(graphInstances) ? graphInstances : [graphInstances]
   }
 
   public execute(): void {
-    this.editor.app.tree!.add(this.graph)
+    const tree = this.editor.app.tree
+    if (!tree) return
+    for (const graph of this.graphs) {
+      tree.add(graph)
+    }
   }
 
   public undo(): void {
-    this.editor.app.tree!.remove(this.graph)
+    const tree = this.editor.app.tree
+    if (!tree) return
+    for (const graph of this.graphs) {
+      tree.remove(graph)
+    }
   }
 }

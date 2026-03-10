@@ -9,6 +9,7 @@ export interface ICommand {
 }
 
 export interface IPlugin {
+  name?: string
   init(app: App): void
   enable(enabled: boolean): void
   destroy(): void

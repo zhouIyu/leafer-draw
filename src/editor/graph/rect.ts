@@ -17,11 +17,12 @@ export default class GraphRect extends GraphBase {
   }
 
   protected update(endPoint: IPointData): void {
+    if (!this.graph) return
     this.points[1] = endPoint
     const startPoint = this.points[0]
     if (!startPoint) return
     const { x, y, width, height } = this.calculateBounds()
-    this.graph!.set({ x, y, width, height })
+    this.graph.set({ x, y, width, height })
   }
 
   private calculateBounds() {

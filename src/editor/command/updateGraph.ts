@@ -45,7 +45,10 @@ export default class UpdateGraphCommand implements ICommand {
 
   private updateSelection() {
     const { editor } = this.editor.app
-    editor.select(this.graphs as unknown as IUI[])
+    if (!editor) return
+    const validGraphs = this.graphs.filter((g): g is IUI => g !== null && g !== undefined)
+    if (validGraphs.length === 0) return
+    editor.select(validGraphs)
     editor.updateEditBox()
   }
 

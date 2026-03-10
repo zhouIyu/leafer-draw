@@ -51,7 +51,7 @@ export default abstract class GraphBase {
   }
 
   protected onMove(e: PointerEvent) {
-    if (!this.isDrawing) return
+    if (!this.isDrawing || !this.graph) return
     const movePoint = e.getPagePoint()
     this.update(movePoint)
   }

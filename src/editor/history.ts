@@ -1,5 +1,7 @@
 import type { ICommand } from './type'
 
+const MAX_HISTORY_SIZE = 100
+
 export default class History {
   private undoStack: ICommand[] = []
   private redoStack: ICommand[] = []
@@ -8,6 +10,9 @@ export default class History {
 
   public addCommand(command: ICommand) {
     this.undoStack.push(command)
+    if (this.undoStack.length > MAX_HISTORY_SIZE) {
+      this.undoStack.shift()
+    }
     this.redoStack = []
   }
 

@@ -5,6 +5,8 @@ import DotMatrix from "./plugin/dotMatrix"
 // import RulerPlugin from "./plugin/ruler"
 import SnapPlugin from "./plugin/snap"
 
+export { emitter, Events } from './event'
+
 export function initEditor(view: HTMLElement): Editor {
   const editor = new Editor({
     view,

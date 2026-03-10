@@ -2,34 +2,38 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 import type { Editor, GraphLike, UpdatableLeafData } from '@/editor'
+import { emitter, Events } from '@/editor'
 
 const props = defineProps<{
   editor?: Editor
 }>()
 
 const selected = ref<GraphLike[]>([])
-let offSelection: undefined | (() => void)
+
+function handleSelectionChange(items: unknown[]) {
+  const graphItems = items as GraphLike[]
+  selected.value = graphItems
+  syncFormFromSelection(graphItems)
+}
 
 watch(
   () => props.editor,
   (editor) => {
-    offSelection?.()
-    offSelection = undefined
+    emitter.off(Events.SELECTION_CHANGE, handleSelectionChange)
 
     if (!editor) {
       selected.value = []
       return
     }
 
-    offSelection = editor.onSelectionChange((items) => {
-      selected.value = items
-      syncFormFromSelection(items)
-    })
+    emitter.on(Events.SELECTION_CHANGE, handleSelectionChange)
   },
   { immediate: true },
 )
 
-onBeforeUnmount(() => offSelection?.())
+onBeforeUnmount(() => {
+  emitter.off(Events.SELECTION_CHANGE, handleSelectionChange)
+})
 
 const fill = ref('')
 const stroke = ref('')
