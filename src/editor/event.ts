@@ -1,21 +1,35 @@
 import mitt, { type Emitter } from 'mitt'
+import {
+  EditorEvent,
+  EditorMoveEvent,
+  EditorRotateEvent,
+  EditorScaleEvent,
+  InnerEditorEvent,
+  LayoutEvent,
+  PointerEvent,
+  RenderEvent,
+  ResizeEvent,
+} from 'leafer-editor'
+import { TransformRecorder, TextChangeRecorder } from './recorder'
+import type { Editor } from './type'
 
 export type Events = {
   'selection-change': unknown[]
-  'history-change': { canUndo: boolean; canRedo: boolean }
+  'ui-state-change': {
+    canUndo: boolean
+    canRedo: boolean
+    hasSelection: boolean
+    hasClipboard: boolean
+    hasDrawable: boolean
+  }
 }
 
 export const Events = {
   SELECTION_CHANGE: 'selection-change',
-  HISTORY_CHANGE: 'history-change',
+  UI_STATE_CHANGE: 'ui-state-change',
 } as const
 
 export const emitter: Emitter<Events> = mitt<Events>()
-
-import { InnerEditorEvent, RenderEvent, EditorEvent, EditorMoveEvent, EditorScaleEvent, EditorRotateEvent, PointerEvent, ResizeEvent, LayoutEvent } from 'leafer-editor'
-import type { Editor } from './type'
-import { TransformRecorder, TextChangeRecorder } from './recorder'
-import { getSelectedGraphLike } from './utils/selection'
 
 export default class AddEvent {
   private editor: Editor
@@ -54,8 +68,7 @@ export default class AddEvent {
 
   private onSelect = () => {
     this.transformRecorder.onSelect()
-    const items = getSelectedGraphLike(this.editor)
-    emitter.emit(Events.SELECTION_CHANGE, items)
+    this.editor.emitSelectionChange()
   }
 
   private onModify = () => this.transformRecorder.onTransformChange()

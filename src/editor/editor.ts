@@ -36,17 +36,17 @@ export default class Editor {
     if (!command) return
     if (this.history.executing) return
     this.history.addCommand(command)
-    this.emitHistoryChange()
+    this.emitUIStateChange()
   }
 
   undo() {
     this.history.undo()
-    this.emitHistoryChange()
+    this.emitUIStateChange()
   }
 
   redo() {
     this.history.redo()
-    this.emitHistoryChange()
+    this.emitUIStateChange()
   }
 
   get canUndo() {
@@ -59,6 +59,15 @@ export default class Editor {
 
   get hasClipboard() {
     return this.clipboard.length > 0
+  }
+
+  get hasSelection() {
+    return getSelected(this).length > 0
+  }
+
+  get hasDrawable() {
+    const { tree } = this.app
+    return tree.children.length > 0
   }
 
   selectAll() {
@@ -95,12 +104,11 @@ export default class Editor {
     const selectedItems = getSelected(this)
     if (selectedItems.length === 0) return
     this.clipboard = selectedItems.map(item => item.clone())
+    this.emitUIStateChange()
   }
 
   paste() {
     if (this.clipboard.length === 0) return
-    const { tree } = this.app
-    if (!tree) return
 
     const offset = 20
     const newItems: IUI[] = []
@@ -111,7 +119,6 @@ export default class Editor {
           x: (cloned.x || 0) + offset,
           y: (cloned.y || 0) + offset,
         })
-        tree.add(cloned)
         newItems.push(cloned)
       }
     }
@@ -145,12 +152,16 @@ export default class Editor {
   emitSelectionChange() {
     const items = getSelectedGraphLike(this)
     emitter.emit(Events.SELECTION_CHANGE, items)
+    this.emitUIStateChange()
   }
 
-  private emitHistoryChange() {
-    emitter.emit(Events.HISTORY_CHANGE, {
+  emitUIStateChange() {
+    emitter.emit(Events.UI_STATE_CHANGE, {
       canUndo: this.canUndo,
       canRedo: this.canRedo,
+      hasSelection: this.hasSelection,
+      hasClipboard: this.hasClipboard,
+      hasDrawable: this.hasDrawable,
     })
   }
 

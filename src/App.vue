@@ -1,41 +1,45 @@
 <script setup lang="ts">
-import { initEditor, GraphTypes } from './editor'
-import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
-import { emitter, Events } from './editor'
-import type { GraphLike } from './editor'
+import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
+import { emitter, Events, initEditor, GraphTypes } from './editor'
+import type { Editor } from './editor'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 
 const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
-const editor = ref()
+const editor = ref<Editor>()
 
 onMounted(() => {
   editor.value = initEditor(canvas.value!)
+  editor.value.emitUIStateChange()
 })
 
 const canUndo = ref(false)
 const canRedo = ref(false)
-const selectionCount = ref(0)
-const hasSelection = computed(() => selectionCount.value > 0)
-const hasClipboard = computed(() => editor.value?.hasClipboard ?? false)
+const hasSelection = ref(false)
+const hasClipboard = ref(false)
+const hasDrawable = ref(false)
 
-function handleSelectionChange(items: unknown[]) {
-  selectionCount.value = (items as GraphLike[]).length
-}
-
-function handleHistoryChange(payload: unknown) {
-  const { canUndo: u, canRedo: r } = payload as { canUndo: boolean; canRedo: boolean }
-  canUndo.value = u
-  canRedo.value = r
+function handleUiStateChange(payload: unknown) {
+  const uiState = payload as {
+    canUndo: boolean
+    canRedo: boolean
+    hasSelection: boolean
+    hasClipboard: boolean
+    hasDrawable: boolean
+  }
+  canUndo.value = uiState.canUndo
+  canRedo.value = uiState.canRedo
+  hasSelection.value = uiState.hasSelection
+  hasClipboard.value = uiState.hasClipboard
+  hasDrawable.value = uiState.hasDrawable
 }
 
 onMounted(() => {
-  emitter.on(Events.SELECTION_CHANGE, handleSelectionChange)
-  emitter.on(Events.HISTORY_CHANGE, handleHistoryChange)
+  emitter.on(Events.UI_STATE_CHANGE, handleUiStateChange)
+  window.addEventListener('keydown', handleKeydown)
 })
 
 onBeforeUnmount(() => {
-  emitter.off(Events.SELECTION_CHANGE, handleSelectionChange)
-  emitter.off(Events.HISTORY_CHANGE, handleHistoryChange)
+  emitter.off(Events.UI_STATE_CHANGE, handleUiStateChange)
   window.removeEventListener('keydown', handleKeydown)
 })
 
@@ -145,14 +149,6 @@ function handleKeydown(e: KeyboardEvent) {
   if (!tool) return
   onSelectGraph(tool)
 }
-
-onMounted(() => {
-  window.addEventListener('keydown', handleKeydown)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleKeydown)
-})
 </script>
 
 <template>
@@ -170,7 +166,7 @@ onBeforeUnmount(() => {
         <button @click="onClear">清空</button>
         <button @click="copy" :disabled="!hasSelection">复制</button>
         <button @click="paste" :disabled="!hasClipboard">粘贴</button>
-        <button @click="selectAll" :disabled="!hasSelection">全选</button>
+        <button @click="selectAll" :disabled="!hasDrawable">全选</button>
         <button @click="undo" :disabled="!canUndo">撤销</button>
         <button @click="redo" :disabled="!canRedo">重做</button>
       </div>
