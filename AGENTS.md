@@ -115,7 +115,7 @@ src/
 - 导出 `emitter` 实例和 `Events` 常量对象
 - 事件列表：
   - `SELECTION_CHANGE`：选择变更时触发，payload 为选中元素数组
-  - `HISTORY_CHANGE`：历史栈变更时触发，payload 包含 `canUndo/canRedo` 状态
+  - `UI_STATE_CHANGE`：UI 状态变更时触发，payload 包含 `canUndo/canRedo/hasSelection/hasClipboard/hasDrawable`
 - UI 层通过订阅事件实现按钮状态同步
 
 **AddEvent 类**（`src/editor/event.ts`）：
